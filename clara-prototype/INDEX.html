@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLARA - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+            padding: 40px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .login-header h1 {
+            font-size: 28px;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .login-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .role-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .role-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: #f9f9f9;
+        }
+
+        .role-card:hover {
+            border-color: #667eea;
+            background-color: #f0f4ff;
+            transform: translateY(-2px);
+        }
+
+        .role-card.active {
+            border-color: #667eea;
+            background-color: #e8eefa;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .role-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .role-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="email"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        input[type="email"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-sizing: border-box;
+        }
+
+        .login-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .login-button:active {
+            transform: translateY(0);
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success.show {
+            display: block;
+        }
+
+        .demo-credentials {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 12px;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .demo-credentials strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .demo-credentials code {
+            background-color: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        .synthetic-banner {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #856404;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="synthetic-banner">
+            ⚠️ Synthetic demo data — not for clinical use
+        </div>
+
+        <div class="login-header">
+            <h1>CLARA System</h1>
+            <p>Clinical Longitudinal Analysis and Retrieval Assistant</p>
+        </div>
+
+        <div class="error" id="error-message"></div>
+        <div class="success" id="success-message"></div>
+
+        <div class="form-group">
+            <label>Select Role</label>
+            <div class="role-selector">
+                <div class="role-card active" data-role="patient" onclick="selectRole(event)">
+                    <div class="role-icon">👤</div>
+                    <div class="role-name">Patient</div>
+                </div>
+                <div class="role-card" data-role="doctor" onclick="selectRole(event)">
+                    <div class="role-icon">👨‍⚕️</div>
+                    <div class="role-name">Doctor</div>
+                </div>
+                <div class="role-card" data-role="admin" onclick="selectRole(event)">
+                    <div class="role-icon">⚙️</div>
+                    <div class="role-name">Admin</div>
+                </div>
+            </div>
+        </div>
+
+        <form id="login-form" onsubmit="handleLogin(event)">
+            <div id="patient-fields" class="role-content" style="display: block;">
+                <div class="form-group">
+                    <label>Patient ID</label>
+                    <input type="text" id="patient-id" name="patient-id" placeholder="e.g., PAT001">
+                </div>
+                <div class="form-group">
+                    <label>Date of Birth (Verification)</label>
+                    <input type="text" id="patient-dob" name="patient-dob" placeholder="e.g., 1965">
+                </div>
+            </div>
+
+            <div id="doctor-fields" class="role-content" style="display: none;">
+                <div class="form-group">
+                    <label>Doctor ID</label>
+                    <input type="text" id="doctor-id" name="doctor-id" placeholder="e.g., DOC001">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="doctor-password" name="doctor-password" placeholder="Enter password">
+                </div>
+            </div>
+
+            <div id="admin-fields" class="role-content" style="display: none;">
+                <div class="form-group">
+                    <label>Admin Username</label>
+                    <input type="text" id="admin-username" name="admin-username" placeholder="e.g., admin">
+                </div>
+                <div class="form-group">
+                    <label>Admin Password</label>
+                    <input type="password" id="admin-password" name="admin-password" placeholder="Enter password">
+                </div>
+            </div>
+
+            <button type="submit" class="login-button">Login</button>
+        </form>
+
+        <div class="demo-credentials">
+            <strong>Demo Credentials:</strong>
+            <div>
+                <strong>Patients:</strong> <code>PAT001</code>, <code>PAT002</code>, <code>PAT003</code> (DOB: birth year like 1965)
+            </div>
+            <div style="margin-top: 8px;">
+                <strong>Doctors:</strong> <code>DOC001</code> / pass: <code>doctor123</code>
+            </div>
+            <div style="margin-top: 8px;">
+                <strong>Admin:</strong> <code>admin</code> / pass: <code>admin123</code>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentRole = 'patient';
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, initializing...');
+            // Set first role card as active
+            document.querySelectorAll('.role-card')[0].classList.add('active');
+            currentRole = 'patient';
+        });
+
+        function selectRole(event) {
+            console.log('selectRole called', event);
+            
+            // Get the role from data attribute
+            const card = event.currentTarget;
+            const role = card.getAttribute('data-role');
+            
+            console.log('Selected role:', role);
+            currentRole = role;
+
+            // Remove active class from all cards
+            document.querySelectorAll('.role-card').forEach(c => {
+                c.classList.remove('active');
+            });
+            
+            // Add active class to clicked card
+            card.classList.add('active');
+
+            // Hide all role content
+            document.querySelectorAll('.role-content').forEach(content => {
+                content.style.display = 'none';
+            });
+
+            // Show relevant role content
+            if (role === 'patient') {
+                document.getElementById('patient-fields').style.display = 'block';
+            } else if (role === 'doctor') {
+                document.getElementById('doctor-fields').style.display = 'block';
+            } else if (role === 'admin') {
+                document.getElementById('admin-fields').style.display = 'block';
+            }
+
+            // Clear errors
+            hideError();
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            console.log('handleLogin called, current role:', currentRole);
+            
+            hideError();
+            hideSuccess();
+
+            let isValid = false;
+            let userData = { role: currentRole };
+            let redirectUrl = '';
+
+            try {
+                if (currentRole === 'patient') {
+                    const patientId = document.getElementById('patient-id').value.trim().toUpperCase();
+                    const dob = document.getElementById('patient-dob').value.trim();
+                    
+                    console.log('Patient login attempt:', { patientId, dob });
+
+                    // Validate patient credentials
+                    if (['PAT001', 'PAT002', 'PAT003'].includes(patientId) && dob) {
+                        userData.patientId = patientId;
+                        userData.dob = dob;
+                        isValid = true;
+                        redirectUrl = 'patient-dashboard.html';
+                        console.log('Patient validation: SUCCESS');
+                    } else {
+                        console.log('Patient validation: FAILED - Invalid ID or DOB');
+                        showError('Invalid Patient ID. Try PAT001, PAT002, or PAT003');
+                    }
+                }
+                else if (currentRole === 'doctor') {
+                    const doctorId = document.getElementById('doctor-id').value.trim();
+                    const password = document.getElementById('doctor-password').value.trim();
+                    
+                    console.log('Doctor login attempt:', { doctorId });
+
+                    if (doctorId === 'DOC001' && password === 'doctor123') {
+                        userData.doctorId = doctorId;
+                        isValid = true;
+                        redirectUrl = 'doctor-dashboard.html';
+                        console.log('Doctor validation: SUCCESS');
+                    } else {
+                        console.log('Doctor validation: FAILED - Invalid ID or password');
+                        showError('Invalid Doctor ID or password. Use DOC001 / doctor123');
+                    }
+                }
+                else if (currentRole === 'admin') {
+                    const username = document.getElementById('admin-username').value.trim();
+                    const password = document.getElementById('admin-password').value.trim();
+                    
+                    console.log('Admin login attempt:', { username });
+
+                    if (username === 'admin' && password === 'admin123') {
+                        userData.username = username;
+                        isValid = true;
+                        redirectUrl = 'admin-dashboard.html';
+                        console.log('Admin validation: SUCCESS');
+                    } else {
+                        console.log('Admin validation: FAILED - Invalid username or password');
+                        showError('Invalid Admin credentials. Use admin / admin123');
+                    }
+                }
+
+                if (isValid) {
+                    console.log('Login valid, storing data and redirecting to:', redirectUrl);
+                    
+                    // Store user data in session storage
+                    sessionStorage.setItem('user', JSON.stringify(userData));
+                    console.log('Session data stored:', userData);
+                    
+                    showSuccess('Login successful! Redirecting...');
+                    
+                    // Redirect after short delay
+                    setTimeout(() => {
+                        window.location.href = redirectUrl;
+                    }, 500);
+                } else {
+                    console.log('Login failed - validation unsuccessful');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('An error occurred: ' + error.message);
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+            console.log('Error shown:', message);
+        }
+
+        function hideError() {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.classList.remove('show');
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('success-message');
+            successDiv.textContent = message;
+            successDiv.classList.add('show');
+            console.log('Success shown:', message);
+        }
+
+        function hideSuccess() {
+            const successDiv = document.getElementById('success-message');
+            successDiv.classList.remove('show');
+        }
+    </script>
+</body>
+</html>

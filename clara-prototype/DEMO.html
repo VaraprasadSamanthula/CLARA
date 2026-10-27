@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLARA Prototype 1 - Live Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .page {
+            padding: 20px;
+        }
+
+        .synthetic-banner {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #856404;
+        }
+
+        .card {
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .card h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: #2c3e50;
+        }
+
+        .list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .list-item {
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .list-item:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-color: #3498db;
+        }
+
+        .list-item-content {
+            flex: 1;
+        }
+
+        .list-item-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .list-item-subtitle {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .list-item-action {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .list-item-action:hover {
+            background-color: #2980b9;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .table thead {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .table td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .chart-placeholder {
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 40px;
+            text-align: center;
+            color: #666;
+            margin-bottom: 16px;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .nav {
+            margin-bottom: 20px;
+        }
+
+        .nav button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .nav button:hover {
+            background-color: #2980b9;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .summary-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 16px;
+            margin-top: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .disclaimer {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 12px 16px;
+            margin-top: 16px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .evidence-box {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 12px;
+            margin-top: 12px;
+            font-size: 12px;
+        }
+
+        .stat-box {
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 16px;
+            text-align: center;
+            display: inline-block;
+            margin-right: 12px;
+            margin-bottom: 12px;
+            min-width: 150px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 12px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab-button.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background-color: #d4edda;
+            color: #155724;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>CLARA Prototype 1</h1>
+            <p>Clinical Longitudinal Analysis and Retrieval Assistant</p>
+        </div>
+    </div>
+
+    <div class="container page">
+        <div id="app"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        let currentView = 'list';
+        let selectedPatientId = null;
+
+        async function apiCall(endpoint) {
+            try {
+                const response = await fetch(`${API_URL}${endpoint}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                return null;
+            }
+        }
+
+        function renderBanner() {
+            return `
+                <div class="synthetic-banner">
+                    ⚠️ <strong>Synthetic demo data — not for clinical use.</strong> This application is a research prototype and should not be used for clinical decision-making.
+                </div>
+            `;
+        }
+
+        async function renderPatientList() {
+            const app = document.getElementById('app');
+            app.innerHTML = renderBanner() + '<div class="loading">Loading patients...</div>';
+
+            const data = await apiCall('/api/patients');
+            if (!data) {
+                app.innerHTML = renderBanner() + '<div class="card"><p>Error loading patients</p></div>';
+                return;
+            }
+
+            let html = renderBanner() + '<div class="card"><h3>Patients</h3><div class="list">';
+            for (const patient of data.patients) {
+                const age = new Date().getFullYear() - patient.birth_year;
+                html += `
+                    <div class="list-item">
+                        <div class="list-item-content">
+                            <div class="list-item-title">${patient.display_name}</div>
+                            <div class="list-item-subtitle">
+                                ID: ${patient.patient_id} • Age: ${age} • Sex: ${patient.sex === 'M' ? 'Male' : 'Female'} • ${patient.encounter_count} encounters
+                            </div>
+                        </div>
+                        <button class="list-item-action" onclick="showPatientDetail('${patient.patient_id}')">View</button>
+                    </div>
+                `;
+            }
+            html += '</div></div>';
+            app.innerHTML = html;
+        }
+
+        async function showPatientDetail(patientId) {
+            currentView = 'detail';
+            selectedPatientId = patientId;
+            renderPatientDetail();
+        }
+
+        async function renderPatientDetail() {
+            const app = document.getElementById('app');
+            app.innerHTML = `<div class="nav"><button onclick="showPatientList()">← Back to Patients</button></div>` + renderBanner() + '<div class="loading">Loading...</div>';
+
+            const detail = await apiCall(`/api/patients/${selectedPatientId}`);
+            const timeline = await apiCall(`/api/patients/${selectedPatientId}/timeline`);
+            const labs = await apiCall(`/api/patients/${selectedPatientId}/labs?test_name=HbA1c`);
+
+            if (!detail) {
+                app.innerHTML = '<div class="card"><p>Patient not found</p></div>';
+                return;
+            }
+
+            const patient = detail.patient;
+            const age = new Date().getFullYear() - patient.birth_year;
+
+            let html = `
+                <div class="nav"><button onclick="showPatientList()">← Back to Patients</button></div>
+                ${renderBanner()}
+                
+                <div class="card">
+                    <h3>Patient Demographics</h3>
+                    <table class="table">
+                        <tbody>
+                            <tr><td><strong>Name</strong></td><td>${patient.display_name}</td></tr>
+                            <tr><td><strong>ID</strong></td><td>${patient.patient_id}</td></tr>
+                            <tr><td><strong>Birth Year</strong></td><td>${patient.birth_year}</td></tr>
+                            <tr><td><strong>Age</strong></td><td>${age}</td></tr>
+                            <tr><td><strong>Sex</strong></td><td>${patient.sex === 'M' ? 'Male' : 'Female'}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>Recent Encounters (${detail.recent_encounters.length})</h3>
+                    <table class="table">
+                        <thead><tr><th>Date</th><th>Type</th><th>Summary</th></tr></thead>
+                        <tbody>
+            `;
+
+            for (const enc of detail.recent_encounters) {
+                html += `<tr><td>${enc.encounter_date}</td><td>${enc.encounter_type}</td><td>${enc.summary || '—'}</td></tr>`;
+            }
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>Active Medications (${detail.active_medications.length})</h3>
+                    <table class="table">
+                        <thead><tr><th>Medication</th><th>Dose</th><th>Status</th><th>Date</th></tr></thead>
+                        <tbody>
+            `;
+
+            for (const med of detail.active_medications) {
+                html += `<tr><td>${med.medication_name}</td><td>${med.dose_text}</td><td>${med.status}</td><td>${med.recorded_date}</td></tr>`;
+            }
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>Recent Labs (${detail.recent_labs.length})</h3>
+                    <table class="table">
+                        <thead><tr><th>Test</th><th>Value</th><th>Unit</th><th>Reference</th><th>Date</th></tr></thead>
+                        <tbody>
+            `;
+
+            for (const lab of detail.recent_labs) {
+                html += `<tr><td>${lab.test_name}</td><td>${lab.value}</td><td>${lab.unit}</td><td>${lab.reference_range_text || '—'}</td><td>${lab.recorded_date}</td></tr>`;
+            }
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            // HbA1c Chart
+            if (labs && labs.values.length > 0) {
+                html += `
+                    <div class="card">
+                        <h3>HbA1c Trend (${labs.unit})</h3>
+                        <div class="chart-placeholder">
+                            📊 HbA1c Trend Chart<br/>
+                            <small>Values: ${labs.values.map(v => `${v.value}% (${v.recorded_date})`).join(' → ')}</small>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Timeline
+            if (timeline && timeline.timeline.length > 0) {
+                html += `<div class="card"><h3>Full Timeline (${timeline.timeline.length} encounters)</h3>`;
+                for (const enc of timeline.timeline) {
+                    html += `
+                        <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #eee;">
+                            <div style="font-weight: 600; margin-bottom: 8px;">${enc.encounter_date} <span style="font-weight: normal; color: #666;">${enc.encounter_type}</span></div>
+                    `;
+                    if (enc.summary) html += `<p style="font-size: 13px; margin-bottom: 8px;">${enc.summary}</p>`;
+                    if (enc.medications.length > 0) {
+                        html += `<div style="font-size: 12px; color: #666; margin-bottom: 4px;"><strong>Medications:</strong> ${enc.medications.map(m => `${m.medication_name} (${m.dose_text})`).join(', ')}</div>`;
+                    }
+                    if (enc.labs.length > 0) {
+                        html += `<div style="font-size: 12px; color: #666;"><strong>Labs:</strong> ${enc.labs.map(l => `${l.test_name} ${l.value} ${l.unit}`).join(', ')}</div>`;
+                    }
+                    html += `</div>`;
+                }
+                html += `</div>`;
+            }
+
+            // Summary
+            html += `
+                <div class="card">
+                    <h3>Clinical Summary</h3>
+                    <button class="list-item-action" onclick="generateSummary()">Generate Summary</button>
+                    <div id="summary-content"></div>
+                </div>
+            `;
+
+            app.innerHTML = html;
+        }
+
+        async function generateSummary() {
+            const summaryDiv = document.getElementById('summary-content');
+            summaryDiv.innerHTML = '<div class="loading">Generating summary...</div>';
+
+            const response = await fetch(`${API_URL}/api/patients/${selectedPatientId}/summary`, { method: 'POST' });
+            const data = await response.json();
+
+            let html = `
+                <div style="margin-top: 16px;">
+                    <p style="font-size: 13px; line-height: 1.6; margin-bottom: 12px;">${data.summary_text}</p>
+                    <div style="font-size: 12px; color: #666; margin-bottom: 12px;">
+                        <strong>Mode:</strong> ${data.mode === 'local_llm' ? 'Local LLM' : 'Template'}
+                    </div>
+                    <details style="font-size: 12px;">
+                        <summary style="cursor: pointer; font-weight: 600; margin-bottom: 8px;">Evidence References (${data.evidence_references.encounters.length} encounters, ${data.evidence_references.labs.length} labs)</summary>
+                        <div class="evidence-box">
+                            <div><strong>Date Range:</strong> ${data.evidence_references.date_range.start} to ${data.evidence_references.date_range.end}</div>
+                            <div><strong>Encounters:</strong> ${data.evidence_references.encounters.join(', ')}</div>
+                            <div><strong>Labs:</strong> ${data.evidence_references.labs.join(', ')}</div>
+                            <div><strong>Medications:</strong> ${data.evidence_references.medications.join(', ')}</div>
+                        </div>
+                    </details>
+                    <div class="disclaimer">
+                        ℹ️ ${data.status}
+                    </div>
+                </div>
+            `;
+            summaryDiv.innerHTML = html;
+        }
+
+        function showPatientList() {
+            currentView = 'list';
+            renderPatientList();
+        }
+
+        // Initialize
+        renderPatientList();
+    </script>
+</body>
+</html>

@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard - CLARA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+        }
+
+        .logout-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .banner {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            color: #856404;
+            font-size: 13px;
+        }
+
+        .section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            font-size: 20px;
+            color: #2c3e50;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .info-card-label {
+            font-size: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .info-card-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .diagnosis-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 16px;
+            margin-bottom: 16px;
+            border-radius: 4px;
+        }
+
+        .diagnosis-box strong {
+            color: #856404;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .diagnosis-list {
+            list-style: none;
+            margin-left: 0;
+        }
+
+        .diagnosis-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #ffe69c;
+            color: #856404;
+        }
+
+        .diagnosis-list li:before {
+            content: "•";
+            color: #ffc107;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+
+        .encounter-card {
+            background-color: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+        }
+
+        .encounter-date {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .encounter-type {
+            display: inline-block;
+            background-color: #e8eefa;
+            color: #667eea;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .encounter-summary {
+            color: #555;
+            margin-top: 8px;
+            line-height: 1.6;
+        }
+
+        .medication-detail {
+            background-color: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+        }
+
+        .medication-detail strong {
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .medication-dose {
+            color: #667eea;
+            font-weight: 600;
+            margin: 8px 0;
+        }
+
+        .medication-instructions {
+            color: #666;
+            font-size: 13px;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 12px;
+            display: inline-block;
+        }
+
+        .lab-result {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 12px;
+            padding: 12px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            align-items: center;
+        }
+
+        .lab-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .lab-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .error-box {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 16px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 18px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        th {
+            background-color: #f5f5f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #ddd;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>👤 Patient Dashboard</h1>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="container">
+        <div class="banner">
+            ⚠️ Synthetic demo data — not for clinical use
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            ⏳ Loading your medical information...
+        </div>
+
+        <div id="error-message"></div>
+
+        <!-- Profile Section -->
+        <div id="profile-section" class="section" style="display: none;">
+            <h2>👤 Your Profile</h2>
+            <div class="info-grid" id="profile-info"></div>
+        </div>
+
+        <!-- Diagnosis Section -->
+        <div id="diagnosis-section" class="section" style="display: none;">
+            <h2>🏥 Medical Diagnoses & Conditions</h2>
+            <div id="diagnosis-info"></div>
+        </div>
+
+        <!-- Doctor Section -->
+        <div id="doctor-section" class="section" style="display: none;">
+            <h2>👨‍⚕️ Your Healthcare Provider</h2>
+            <div id="doctor-info"></div>
+        </div>
+
+        <!-- Encounters Section -->
+        <div id="encounters-section" class="section" style="display: none;">
+            <h2>📋 Recent Medical Visits</h2>
+            <div id="encounters-list"></div>
+        </div>
+
+        <!-- Medications Section -->
+        <div id="medications-section" class="section" style="display: none;">
+            <h2>💊 Your Active Medications</h2>
+            <p style="color: #666; margin-bottom: 16px; font-size: 13px;">
+                <strong>Important:</strong> Take your medications exactly as prescribed. Do not stop without consulting your doctor.
+            </p>
+            <div id="medications-list"></div>
+        </div>
+
+        <!-- Labs Section -->
+        <div id="labs-section" class="section" style="display: none;">
+            <h2>🧪 Lab Results & Test Values</h2>
+            <div id="labs-list"></div>
+        </div>
+
+        <!-- Info Section -->
+        <div id="info-section" class="section" style="display: none;">
+            <h2>ℹ️ Health Information & Guidance</h2>
+            <div id="additional-info"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+
+        console.log('=== Patient Dashboard Started ===');
+
+        // Try to load immediately and also on DOMContentLoaded
+        function initDashboard() {
+            console.log('initDashboard() called');
+            
+            // Get user from session
+            const userStr = sessionStorage.getItem('user');
+            console.log('Session user data:', userStr);
+            
+            if (!userStr) {
+                console.log('No user in session, redirecting to login');
+                showError('No user session found. Redirecting to login...');
+                setTimeout(() => { window.location.href = 'INDEX.html'; }, 2000);
+                return;
+            }
+
+            const user = JSON.parse(userStr);
+            console.log('Parsed user:', user);
+
+            if (user.role !== 'patient') {
+                console.log('User is not patient, redirecting');
+                showError('Access denied. Patient role required.');
+                setTimeout(() => { window.location.href = 'INDEX.html'; }, 2000);
+                return;
+            }
+
+            const patientId = user.patientId;
+            console.log('Loading data for patient:', patientId);
+            
+            loadPatientData(patientId);
+        }
+
+        function logout() {
+            console.log('Logging out...');
+            sessionStorage.removeItem('user');
+            window.location.href = 'INDEX.html';
+        }
+
+        function showError(message) {
+            console.error('Showing error:', message);
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.innerHTML = `<div class="error-box"><strong>❌ Error:</strong> ${message}</div>`;
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        async function loadPatientData(patientId) {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                console.log(`Fetching from: ${API_URL}/api/patients/${patientId}`);
+                
+                const response = await fetch(`${API_URL}/api/patients/${patientId}`);
+                console.log('API Response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('API Data received:', data);
+
+                document.getElementById('loading').style.display = 'none';
+
+                // Display all sections
+                displayProfile(data);
+                displayDiagnosis(patientId);
+                displayDoctor();
+                displayEncounters(data);
+                displayMedications(data);
+                displayLabs(data);
+                displayInfo();
+
+            } catch (error) {
+                console.error('Load error:', error);
+                showError(`Failed to load data: ${error.message}`);
+            }
+        }
+
+        function displayProfile(data) {
+            const p = data.patient;
+            const age = new Date().getFullYear() - p.birth_year;
+
+            const html = `
+                <div class="info-card">
+                    <div class="info-card-label">Name</div>
+                    <div class="info-card-value">${p.display_name}</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-label">Patient ID</div>
+                    <div class="info-card-value">${p.patient_id}</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-label">Age</div>
+                    <div class="info-card-value">${age}</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-label">Gender</div>
+                    <div class="info-card-value">${p.sex === 'M' ? 'Male' : 'Female'}</div>
+                </div>
+            `;
+            document.getElementById('profile-info').innerHTML = html;
+            document.getElementById('profile-section').style.display = 'block';
+            console.log('Profile displayed');
+        }
+
+        function displayDiagnosis(patientId) {
+            const diagnoses = {
+                'PAT001': ['Type 2 Diabetes Mellitus', 'Essential Hypertension', 'Dyslipidemia'],
+                'PAT002': ['Essential Hypertension', 'Cardiovascular Disease Risk'],
+                'PAT003': ['Hyperlipidemia', 'Metabolic Syndrome Risk']
+            };
+
+            const list = diagnoses[patientId] || ['No diagnoses recorded'];
+            const html = `
+                <div class="diagnosis-box">
+                    <strong>Your Current Medical Conditions:</strong>
+                    <ul class="diagnosis-list">
+                        ${list.map(d => `<li>${d}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+            document.getElementById('diagnosis-info').innerHTML = html;
+            document.getElementById('diagnosis-section').style.display = 'block';
+            console.log('Diagnosis displayed');
+        }
+
+        function displayDoctor() {
+            const html = `
+                <div style="background-color: #e8eefa; padding: 16px; border-radius: 4px;">
+                    <p><strong>👨‍⚕️ Primary Care Physician:</strong> Dr. Robert Johnson</p>
+                    <p style="margin-top: 8px;"><strong>Doctor ID:</strong> DOC001</p>
+                    <p style="margin-top: 8px;"><strong>Specialty:</strong> Internal Medicine & Endocrinology</p>
+                    <p style="margin-top: 8px;"><strong>Contact:</strong> Available during office hours</p>
+                </div>
+            `;
+            document.getElementById('doctor-info').innerHTML = html;
+            document.getElementById('doctor-section').style.display = 'block';
+            console.log('Doctor displayed');
+        }
+
+        function displayEncounters(data) {
+            if (!data.recent_encounters || data.recent_encounters.length === 0) {
+                document.getElementById('encounters-list').innerHTML = '<div class="empty-state">No encounters recorded</div>';
+                document.getElementById('encounters-section').style.display = 'block';
+                return;
+            }
+
+            let html = '';
+            for (const enc of data.recent_encounters) {
+                html += `
+                    <div class="encounter-card">
+                        <div class="encounter-date">📅 ${new Date(enc.encounter_date).toLocaleDateString()}</div>
+                        <div class="encounter-type">${enc.encounter_type.toUpperCase()}</div>
+                        <div class="encounter-summary"><strong>Summary:</strong> ${enc.summary}</div>
+                    </div>
+                `;
+            }
+            document.getElementById('encounters-list').innerHTML = html;
+            document.getElementById('encounters-section').style.display = 'block';
+            console.log('Encounters displayed');
+        }
+
+        function displayMedications(data) {
+            if (!data.active_medications || data.active_medications.length === 0) {
+                document.getElementById('medications-list').innerHTML = '<div class="empty-state">No active medications</div>';
+                document.getElementById('medications-section').style.display = 'block';
+                return;
+            }
+
+            let html = '';
+            for (const med of data.active_medications) {
+                html += `
+                    <div class="medication-detail">
+                        <strong>💊 ${med.medication_name}</strong>
+                        <div class="medication-dose">Dose: ${med.dose_text}</div>
+                        <span class="status-active">ACTIVE</span>
+                        <div class="medication-instructions">
+                            <strong>How to use:</strong> Take as prescribed by your doctor. Do not exceed recommended dose. Take with or without food as instructed.
+                        </div>
+                    </div>
+                `;
+            }
+            document.getElementById('medications-list').innerHTML = html;
+            document.getElementById('medications-section').style.display = 'block';
+            console.log('Medications displayed');
+        }
+
+        function displayLabs(data) {
+            if (!data.recent_labs || data.recent_labs.length === 0) {
+                document.getElementById('labs-list').innerHTML = '<div class="empty-state">No lab results</div>';
+                document.getElementById('labs-section').style.display = 'block';
+                return;
+            }
+
+            let html = '';
+            for (const lab of data.recent_labs) {
+                html += `
+                    <div class="lab-result">
+                        <div>
+                            <div class="lab-name">🧬 ${lab.test_name}</div>
+                        </div>
+                        <div>
+                            <div class="lab-value">${lab.value}</div>
+                            <div style="font-size: 12px; color: #666;">Unit: ${lab.unit}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: #666;"><strong>Normal:</strong></div>
+                            <div style="font-size: 12px;">${lab.reference_range_text || 'N/A'}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: #666;"><strong>Status:</strong></div>
+                            <div style="font-weight: 600; color: #dc3545;">⚠️ Check with doctor</div>
+                        </div>
+                    </div>
+                `;
+            }
+            document.getElementById('labs-list').innerHTML = html;
+            document.getElementById('labs-section').style.display = 'block';
+            console.log('Labs displayed');
+        }
+
+        function displayInfo() {
+            const html = `
+                <div style="line-height: 1.8; color: #555;">
+                    <h3 style="font-size: 16px; margin-bottom: 12px;">📱 When to Contact Your Doctor:</h3>
+                    <ul style="list-style: none; margin-left: 0; margin-bottom: 16px;">
+                        <li>• If your symptoms worsen</li>
+                        <li>• If you experience severe side effects from medications</li>
+                        <li>• If you have questions about your treatment</li>
+                        <li>• If your lab results significantly change</li>
+                    </ul>
+
+                    <h3 style="font-size: 16px; margin-bottom: 12px;">💊 Medication Safety:</h3>
+                    <ul style="list-style: none; margin-left: 0; margin-bottom: 16px;">
+                        <li>• Take medications exactly as prescribed</li>
+                        <li>• Do not stop medication without consulting your doctor</li>
+                        <li>• Keep all medications in original containers</li>
+                        <li>• Inform your doctor of any allergies</li>
+                    </ul>
+
+                    <h3 style="font-size: 16px; margin-bottom: 12px;">🏃 Lifestyle Recommendations:</h3>
+                    <ul style="list-style: none; margin-left: 0;">
+                        <li>• Maintain a balanced diet</li>
+                        <li>• Exercise regularly (150 minutes/week recommended)</li>
+                        <li>• Manage stress and get adequate sleep</li>
+                        <li>• Attend scheduled follow-up appointments</li>
+                    </ul>
+                </div>
+            `;
+            document.getElementById('additional-info').innerHTML = html;
+            document.getElementById('info-section').style.display = 'block';
+            console.log('Info displayed');
+        }
+
+        // Start when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initDashboard);
+        } else {
+            initDashboard();
+        }
+    </script>
+</body>
+</html>

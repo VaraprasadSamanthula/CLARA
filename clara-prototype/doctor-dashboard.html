@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard - CLARA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+        }
+
+        .logout-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .banner {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section h2 {
+            font-size: 20px;
+            color: #2c3e50;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-top: 16px;
+        }
+
+        th {
+            background-color: #f5f5f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #ddd;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .success.show {
+            display: block;
+        }
+
+        .patient-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .patient-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .patient-card:hover {
+            border-color: #667eea;
+            background-color: #f0f4ff;
+        }
+
+        .patient-card.active {
+            border-color: #667eea;
+            background-color: #e8eefa;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .patient-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .patient-id {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>👨‍⚕️ Doctor Dashboard</h1>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="container">
+        <div class="banner">
+            ⚠️ Synthetic demo data — not for clinical use
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('view')">View Records</button>
+            <button class="tab-button" onclick="switchTab('encounter')">Add Encounter</button>
+            <button class="tab-button" onclick="switchTab('medication')">Add Medication</button>
+            <button class="tab-button" onclick="switchTab('lab')">Add Lab Result</button>
+        </div>
+
+        <!-- View Records Tab -->
+        <div id="view-tab" class="section active">
+            <h2>View Patient Records</h2>
+            <label>Select Patient:</label>
+            <div class="patient-selector" id="patient-selector"></div>
+            <div id="patient-records"></div>
+        </div>
+
+        <!-- Add Encounter Tab -->
+        <div id="encounter-tab" class="section">
+            <h2>Add New Encounter</h2>
+            <div class="success" id="encounter-success">Encounter added successfully!</div>
+            <form onsubmit="handleAddEncounter(event)">
+                <div class="form-group">
+                    <label>Patient</label>
+                    <select id="encounter-patient" required>
+                        <option value="">Select a patient</option>
+                        <option value="PAT001">Alice Smith (PAT001)</option>
+                        <option value="PAT002">Bob Johnson (PAT002)</option>
+                        <option value="PAT003">Carol Davis (PAT003)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Encounter Type</label>
+                    <select id="encounter-type" required>
+                        <option value="">Select type</option>
+                        <option value="clinic">Clinic Visit</option>
+                        <option value="emergency">Emergency</option>
+                        <option value="inpatient">Inpatient</option>
+                        <option value="follow-up">Follow-up</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="encounter-date" required>
+                </div>
+                <div class="form-group">
+                    <label>Clinical Summary</label>
+                    <textarea id="encounter-summary" required placeholder="Clinical observations and findings..."></textarea>
+                </div>
+                <button type="submit" class="submit-btn">Add Encounter</button>
+            </form>
+        </div>
+
+        <!-- Add Medication Tab -->
+        <div id="medication-tab" class="section">
+            <h2>Add New Medication</h2>
+            <div class="success" id="medication-success">Medication added successfully!</div>
+            <form onsubmit="handleAddMedication(event)">
+                <div class="form-group">
+                    <label>Patient</label>
+                    <select id="medication-patient" required>
+                        <option value="">Select a patient</option>
+                        <option value="PAT001">Alice Smith (PAT001)</option>
+                        <option value="PAT002">Bob Johnson (PAT002)</option>
+                        <option value="PAT003">Carol Davis (PAT003)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Medication Name</label>
+                    <input type="text" id="medication-name" required placeholder="e.g., Metformin">
+                </div>
+                <div class="form-group">
+                    <label>Dose</label>
+                    <input type="text" id="medication-dose" required placeholder="e.g., 500 mg twice daily">
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="medication-status" required>
+                        <option value="active">Active</option>
+                        <option value="completed">Completed</option>
+                        <option value="discontinued">Discontinued</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-btn">Add Medication</button>
+            </form>
+        </div>
+
+        <!-- Add Lab Tab -->
+        <div id="lab-tab" class="section">
+            <h2>Add Lab Result</h2>
+            <div class="success" id="lab-success">Lab result added successfully!</div>
+            <form onsubmit="handleAddLab(event)">
+                <div class="form-group">
+                    <label>Patient</label>
+                    <select id="lab-patient" required>
+                        <option value="">Select a patient</option>
+                        <option value="PAT001">Alice Smith (PAT001)</option>
+                        <option value="PAT002">Bob Johnson (PAT002)</option>
+                        <option value="PAT003">Carol Davis (PAT003)</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Test Name</label>
+                        <input type="text" id="lab-name" required placeholder="e.g., HbA1c">
+                    </div>
+                    <div class="form-group">
+                        <label>Value</label>
+                        <input type="number" id="lab-value" step="0.01" required placeholder="e.g., 6.8">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Unit</label>
+                        <input type="text" id="lab-unit" required placeholder="e.g., %">
+                    </div>
+                    <div class="form-group">
+                        <label>Reference Range</label>
+                        <input type="text" id="lab-reference" placeholder="e.g., 4.0-6.0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="lab-date" required>
+                </div>
+                <button type="submit" class="submit-btn">Add Lab Result</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        let selectedPatientId = 'PAT001';
+
+        // Check authentication on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const user = JSON.parse(sessionStorage.getItem('user') || 'null');
+            if (!user || user.role !== 'doctor') {
+                window.location.href = 'INDEX.html';
+                return;
+            }
+            // Load patient list after auth check
+            setTimeout(loadPatientList, 300);
+        });
+
+        function logout() {
+            sessionStorage.removeItem('user');
+            window.location.href = 'INDEX.html';
+        }
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.section').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'view') {
+                loadPatientList();
+            }
+        }
+
+        async function loadPatientList() {
+            try {
+                const response = await fetch(`${API_URL}/api/patients`);
+                const data = await response.json();
+
+                let html = '';
+                for (const patient of data.patients) {
+                    html += `
+                        <div class="patient-card ${patient.patient_id === selectedPatientId ? 'active' : ''}" onclick="loadPatientRecords('${patient.patient_id}')">
+                            <div class="patient-name">${patient.display_name}</div>
+                            <div class="patient-id">${patient.patient_id}</div>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('patient-selector').innerHTML = html;
+                loadPatientRecords(selectedPatientId);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadPatientRecords(patientId) {
+            selectedPatientId = patientId;
+            
+            // Update active card
+            document.querySelectorAll('.patient-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            event.target.closest('.patient-card').classList.add('active');
+
+            try {
+                const response = await fetch(`${API_URL}/api/patients/${patientId}`);
+                const data = await response.json();
+
+                const patient = data.patient;
+                const age = new Date().getFullYear() - patient.birth_year;
+
+                let html = `
+                    <div style="background-color: #f0f4ff; padding: 16px; border-radius: 4px; margin-top: 16px; margin-bottom: 16px;">
+                        <h3>${patient.display_name}</h3>
+                        <p>Age: ${age} | ID: ${patient.patient_id} | Sex: ${patient.sex === 'M' ? 'Male' : 'Female'}</p>
+                    </div>
+
+                    <h3 style="margin-top: 20px; margin-bottom: 12px;">Recent Encounters</h3>
+                    <table>
+                        <thead><tr><th>Date</th><th>Type</th><th>Summary</th></tr></thead>
+                        <tbody>
+                `;
+
+                for (const enc of data.recent_encounters) {
+                    html += `<tr><td>${enc.encounter_date}</td><td>${enc.encounter_type}</td><td>${enc.summary || '—'}</td></tr>`;
+                }
+
+                html += `</tbody></table>
+                    <h3 style="margin-top: 20px; margin-bottom: 12px;">Active Medications</h3>
+                    <table>
+                        <thead><tr><th>Medication</th><th>Dose</th><th>Status</th></tr></thead>
+                        <tbody>
+                `;
+
+                for (const med of data.active_medications) {
+                    html += `<tr><td>${med.medication_name}</td><td>${med.dose_text}</td><td>${med.status}</td></tr>`;
+                }
+
+                html += `</tbody></table>
+                    <h3 style="margin-top: 20px; margin-bottom: 12px;">Recent Labs</h3>
+                    <table>
+                        <thead><tr><th>Test</th><th>Value</th><th>Unit</th><th>Reference</th><th>Date</th></tr></thead>
+                        <tbody>
+                `;
+
+                for (const lab of data.recent_labs) {
+                    html += `<tr><td>${lab.test_name}</td><td>${lab.value}</td><td>${lab.unit}</td><td>${lab.reference_range_text || '—'}</td><td>${lab.recorded_date}</td></tr>`;
+                }
+
+                html += `</tbody></table>`;
+                document.getElementById('patient-records').innerHTML = html;
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function handleAddEncounter(e) {
+            e.preventDefault();
+            showSuccess('encounter-success');
+            e.target.reset();
+        }
+
+        function handleAddMedication(e) {
+            e.preventDefault();
+            showSuccess('medication-success');
+            e.target.reset();
+        }
+
+        function handleAddLab(e) {
+            e.preventDefault();
+            showSuccess('lab-success');
+            e.target.reset();
+        }
+
+        function showSuccess(elementId) {
+            const el = document.getElementById(elementId);
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>

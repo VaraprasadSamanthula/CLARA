@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - CLARA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+        }
+
+        .logout-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .banner {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section h2 {
+            font-size: 20px;
+            color: #2c3e50;
+            margin-bottom: 16px;
+        }
+
+        .section h3 {
+            font-size: 16px;
+            color: #2c3e50;
+            margin-top: 20px;
+            margin-bottom: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .danger-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .danger-btn:hover {
+            background-color: #c0392b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-top: 16px;
+        }
+
+        th {
+            background-color: #f5f5f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #ddd;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .success.show {
+            display: block;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .user-list {
+            list-style: none;
+        }
+
+        .user-item {
+            background-color: #f9f9f9;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .action-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .activity-log {
+            background-color: #f9f9f9;
+            padding: 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+
+        .log-entry {
+            padding: 4px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-timestamp {
+            color: #666;
+        }
+
+        .log-message {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚙️ Admin Dashboard</h1>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="container">
+        <div class="banner">
+            ⚠️ Synthetic demo data — not for clinical use
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('overview')">Overview</button>
+            <button class="tab-button" onclick="switchTab('users')">User Management</button>
+            <button class="tab-button" onclick="switchTab('patients')">Patient Management</button>
+            <button class="tab-button" onclick="switchTab('settings')">System Settings</button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="overview-tab" class="section active">
+            <h2>System Overview</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-patients">3</div>
+                    <div class="stat-label">Total Patients</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-doctors">1</div>
+                    <div class="stat-label">Total Doctors</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-encounters">5</div>
+                    <div class="stat-label">Total Encounters</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-labs">15</div>
+                    <div class="stat-label">Lab Results</div>
+                </div>
+            </div>
+
+            <h3>System Activity</h3>
+            <div class="activity-log" id="activity-log">
+                <div class="log-entry">
+                    <span class="log-timestamp">[14:23:15]</span> <span class="log-message">System initialized</span>
+                </div>
+                <div class="log-entry">
+                    <span class="log-timestamp">[14:24:32]</span> <span class="log-message">Admin login: admin</span>
+                </div>
+                <div class="log-entry">
+                    <span class="log-timestamp">[14:25:01]</span> <span class="log-message">Database connected</span>
+                </div>
+                <div class="log-entry">
+                    <span class="log-timestamp">[14:25:30]</span> <span class="log-message">All services operational</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Management Tab -->
+        <div id="users-tab" class="section">
+            <h2>User Management</h2>
+            <div class="success" id="user-success">User action completed successfully!</div>
+            <div class="error" id="user-error"></div>
+
+            <h3>Add New User</h3>
+            <form onsubmit="handleAddUser(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="new-username" required placeholder="e.g., doc002">
+                    </div>
+                    <div class="form-group">
+                        <label>User Type</label>
+                        <select id="new-user-type" required>
+                            <option value="">Select user type</option>
+                            <option value="doctor">Doctor</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="new-fullname" required placeholder="e.g., Dr. Jane Smith">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="new-email" required placeholder="e.g., jane@hospital.com">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Temporary Password</label>
+                    <input type="text" id="new-password" required placeholder="e.g., TempPass123!">
+                </div>
+                <button type="submit" class="submit-btn">Add User</button>
+            </form>
+
+            <h3 style="margin-top: 30px;">Active Users</h3>
+            <ul class="user-list" id="users-list">
+                <li class="user-item">
+                    <div class="user-info">
+                        <div class="user-name">DOC001 - Dr. Robert Johnson</div>
+                        <div class="user-role">Role: Doctor | Status: Active | Email: robert@hospital.com</div>
+                    </div>
+                    <div class="user-actions">
+                        <button class="action-btn" onclick="editUser('DOC001')">Edit</button>
+                        <button class="danger-btn" onclick="deactivateUser('DOC001')">Deactivate</button>
+                    </div>
+                </li>
+                <li class="user-item">
+                    <div class="user-info">
+                        <div class="user-name">admin - System Administrator</div>
+                        <div class="user-role">Role: Admin | Status: Active | Email: admin@hospital.com</div>
+                    </div>
+                    <div class="user-actions">
+                        <button class="action-btn" onclick="editUser('admin')">Edit</button>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Patient Management Tab -->
+        <div id="patients-tab" class="section">
+            <h2>Patient Management</h2>
+            <div class="success" id="patient-success">Patient action completed successfully!</div>
+
+            <h3>Add New Patient</h3>
+            <form onsubmit="handleAddPatient(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Patient ID</label>
+                        <input type="text" id="patient-id" required placeholder="e.g., PAT004">
+                    </div>
+                    <div class="form-group">
+                        <label>Display Name</label>
+                        <input type="text" id="patient-name" required placeholder="e.g., Diana Smith">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Birth Year</label>
+                        <input type="number" id="patient-birth-year" required placeholder="e.g., 1970" min="1900" max="2024">
+                    </div>
+                    <div class="form-group">
+                        <label>Sex</label>
+                        <select id="patient-sex" required>
+                            <option value="">Select sex</option>
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                            <option value="O">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Diagnosis / Notes</label>
+                    <textarea id="patient-notes" placeholder="e.g., Type 2 Diabetes, Hypertension"></textarea>
+                </div>
+                <button type="submit" class="submit-btn">Add Patient</button>
+            </form>
+
+            <h3 style="margin-top: 30px;">Patient Directory</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Patient ID</th>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Sex</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="patients-table">
+                    <tr>
+                        <td>PAT001</td>
+                        <td>Alice Smith</td>
+                        <td>59</td>
+                        <td>F</td>
+                        <td><span style="color: green;">Active</span></td>
+                        <td>
+                            <button class="action-btn" onclick="editPatient('PAT001')">Edit</button>
+                            <button class="danger-btn" onclick="deactivatePatient('PAT001')">Archive</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>PAT002</td>
+                        <td>Bob Johnson</td>
+                        <td>72</td>
+                        <td>M</td>
+                        <td><span style="color: green;">Active</span></td>
+                        <td>
+                            <button class="action-btn" onclick="editPatient('PAT002')">Edit</button>
+                            <button class="danger-btn" onclick="deactivatePatient('PAT002')">Archive</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>PAT003</td>
+                        <td>Carol Davis</td>
+                        <td>55</td>
+                        <td>F</td>
+                        <td><span style="color: green;">Active</span></td>
+                        <td>
+                            <button class="action-btn" onclick="editPatient('PAT003')">Edit</button>
+                            <button class="danger-btn" onclick="deactivatePatient('PAT003')">Archive</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings-tab" class="section">
+            <h2>System Settings</h2>
+            <div class="success" id="settings-success">Settings updated successfully!</div>
+
+            <h3>General Settings</h3>
+            <form onsubmit="handleSaveSettings(event)">
+                <div class="form-group">
+                    <label>System Name</label>
+                    <input type="text" id="system-name" value="CLARA System" required>
+                </div>
+                <div class="form-group">
+                    <label>Organization</label>
+                    <input type="text" id="organization" value="University Hospital" required>
+                </div>
+                <div class="form-group">
+                    <label>API URL</label>
+                    <input type="text" id="api-url" value="http://localhost:8000" required>
+                </div>
+                <button type="submit" class="submit-btn">Save General Settings</button>
+            </form>
+
+            <h3>Security Settings</h3>
+            <form onsubmit="handleSecuritySettings(event)">
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="require-mfa" checked>
+                        Require Multi-Factor Authentication
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="audit-logging" checked>
+                        Enable Audit Logging
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Session Timeout (minutes)</label>
+                    <input type="number" id="session-timeout" value="30" min="5" max="480">
+                </div>
+                <button type="submit" class="submit-btn">Save Security Settings</button>
+            </form>
+
+            <h3>Data Management</h3>
+            <div style="margin-top: 16px;">
+                <button class="submit-btn" onclick="backupDatabase()">Backup Database</button>
+                <button class="danger-btn" onclick="confirmResetDemo()" style="margin-left: 8px;">Reset Demo Data</button>
+            </div>
+
+            <h3 style="margin-top: 30px;">About CLARA</h3>
+            <div style="background-color: #f9f9f9; padding: 16px; border-radius: 4px; font-size: 14px; line-height: 1.6;">
+                <strong>CLARA Prototype 1</strong><br>
+                Clinical Longitudinal Analysis and Retrieval Assistant<br><br>
+                <strong>Version:</strong> 0.1.0<br>
+                <strong>Backend:</strong> FastAPI + SQLite<br>
+                <strong>Frontend:</strong> Pure HTML/JavaScript<br>
+                <strong>Status:</strong> Development/Demo<br><br>
+                <strong>⚠️ DISCLAIMER:</strong> This is a prototype for demonstration and educational purposes only. Not intended for clinical use with real patient data.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+
+        // Check authentication on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const user = JSON.parse(sessionStorage.getItem('user') || 'null');
+            if (!user || user.role !== 'admin') {
+                window.location.href = 'INDEX.html';
+                return;
+            }
+            // Load stats after auth check
+            setTimeout(loadSystemStats, 300);
+        });
+
+        function logout() {
+            sessionStorage.removeItem('user');
+            window.location.href = 'INDEX.html';
+        }
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.section').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'overview') {
+                loadSystemStats();
+            }
+        }
+
+        async function loadSystemStats() {
+            try {
+                const response = await fetch(`${API_URL}/api/patients`);
+                const data = await response.json();
+                document.getElementById('total-patients').textContent = data.patients.length;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        function handleAddUser(e) {
+            e.preventDefault();
+            const username = document.getElementById('new-username').value;
+            const userType = document.getElementById('new-user-type').value;
+            const fullname = document.getElementById('new-fullname').value;
+            const email = document.getElementById('new-email').value;
+
+            // Add to list
+            const usersList = document.getElementById('users-list');
+            const newItem = document.createElement('li');
+            newItem.className = 'user-item';
+            newItem.innerHTML = `
+                <div class="user-info">
+                    <div class="user-name">${username} - ${fullname}</div>
+                    <div class="user-role">Role: ${userType.charAt(0).toUpperCase() + userType.slice(1)} | Status: Active | Email: ${email}</div>
+                </div>
+                <div class="user-actions">
+                    <button class="action-btn" onclick="editUser('${username}')">Edit</button>
+                    <button class="danger-btn" onclick="deactivateUser('${username}')">Deactivate</button>
+                </div>
+            `;
+            usersList.appendChild(newItem);
+
+            showSuccess('user-success');
+            e.target.reset();
+        }
+
+        function handleAddPatient(e) {
+            e.preventDefault();
+            const patientId = document.getElementById('patient-id').value;
+            const patientName = document.getElementById('patient-name').value;
+            const birthYear = parseInt(document.getElementById('patient-birth-year').value);
+            const sex = document.getElementById('patient-sex').value;
+            const age = new Date().getFullYear() - birthYear;
+
+            // Add to table
+            const tableBody = document.getElementById('patients-table');
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td>${patientId}</td>
+                <td>${patientName}</td>
+                <td>${age}</td>
+                <td>${sex === 'M' ? 'Male' : sex === 'F' ? 'Female' : 'Other'}</td>
+                <td><span style="color: green;">Active</span></td>
+                <td>
+                    <button class="action-btn" onclick="editPatient('${patientId}')">Edit</button>
+                    <button class="danger-btn" onclick="deactivatePatient('${patientId}')">Archive</button>
+                </td>
+            `;
+            tableBody.appendChild(newRow);
+
+            showSuccess('patient-success');
+            e.target.reset();
+        }
+
+        function handleSaveSettings(e) {
+            e.preventDefault();
+            showSuccess('settings-success');
+        }
+
+        function handleSecuritySettings(e) {
+            e.preventDefault();
+            showSuccess('settings-success');
+        }
+
+        function editUser(userId) {
+            alert(`Edit user: ${userId}`);
+        }
+
+        function deactivateUser(userId) {
+            if (confirm(`Are you sure you want to deactivate ${userId}?`)) {
+                alert(`User ${userId} deactivated.`);
+            }
+        }
+
+        function editPatient(patientId) {
+            alert(`Edit patient: ${patientId}`);
+        }
+
+        function deactivatePatient(patientId) {
+            if (confirm(`Are you sure you want to archive ${patientId}?`)) {
+                alert(`Patient ${patientId} archived.`);
+            }
+        }
+
+        function backupDatabase() {
+            alert('Database backup started. This will be saved to: clara_backup_' + new Date().toISOString().split('T')[0] + '.db');
+        }
+
+        function confirmResetDemo() {
+            if (confirm('Are you sure you want to reset all demo data? This cannot be undone.')) {
+                alert('Demo data reset. System will restart.');
+            }
+        }
+
+        function showSuccess(elementId) {
+            const el = document.getElementById(elementId);
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
