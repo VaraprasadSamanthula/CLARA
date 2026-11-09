@@ -8,6 +8,25 @@ from datetime import datetime
 Base = declarative_base()
 
 
+class User(Base):
+    """Users for authentication (Phase 2)."""
+    __tablename__ = "users"
+
+    user_id = Column(String, primary_key=True)
+    email = Column(String, unique=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    role = Column(String, nullable=False)  # 'doctor', 'admin', 'patient'
+    created_at = Column(String, nullable=False)  # ISO 8601
+    updated_at = Column(String, nullable=False)  # ISO 8601
+
+    __table_args__ = (
+        Index("idx_users_email", "email"),
+    )
+
+    def __repr__(self):
+        return f"<User(user_id={self.user_id}, email={self.email}, role={self.role})>"
+
+
 class Patient(Base):
     """Patient demographics and metadata."""
     __tablename__ = "patients"
@@ -22,6 +41,9 @@ class Patient(Base):
     encounters = relationship("Encounter", back_populates="patient", cascade="all, delete-orphan")
     medications = relationship("Medication", back_populates="patient", cascade="all, delete-orphan")
     labs = relationship("LabResult", back_populates="patient", cascade="all, delete-orphan")
+    diagnoses = relationship("Diagnosis", back_populates="patient", cascade="all, delete-orphan")
+    procedures = relationship("Procedure", back_populates="patient", cascade="all, delete-orphan")
+    admissions = relationship("Admission", back_populates="patient", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Patient(patient_id={self.patient_id}, display_name={self.display_name})>"
@@ -35,6 +57,7 @@ class Encounter(Base):
     patient_id = Column(String, ForeignKey("patients.patient_id"), nullable=False)
     encounter_date = Column(String, nullable=False)  # ISO 8601
     encounter_type = Column(String, nullable=False)  # 'clinic', 'ER', 'inpatient'
+    encounter_status = Column(String, nullable=False, default="completed")  # 'active', 'completed', 'cancelled'
     summary = Column(String, nullable=True)  # Brief clinical summary (no diagnoses)
     created_at = Column(String, nullable=False)  # ISO 8601
 
@@ -42,6 +65,8 @@ class Encounter(Base):
     patient = relationship("Patient", back_populates="encounters")
     medications = relationship("Medication", back_populates="encounter", cascade="all, delete-orphan")
     labs = relationship("LabResult", back_populates="encounter", cascade="all, delete-orphan")
+    diagnoses = relationship("Diagnosis", back_populates="encounter", cascade="all, delete-orphan")
+    procedures = relationship("Procedure", back_populates="encounter", cascade="all, delete-orphan")
 
     # Index for efficient timeline queries
     __table_args__ = (
@@ -104,3 +129,78 @@ class LabResult(Base):
 
     def __repr__(self):
         return f"<LabResult(lab_id={self.lab_id}, test_name={self.test_name}, value={self.value})>"
+
+
+class Diagnosis(Base):
+    """Diagnosis history (NEW)."""
+    __tablename__ = "diagnoses"
+
+    diagnosis_id = Column(String, primary_key=True)
+    patient_id = Column(String, ForeignKey("patients.patient_id"), nullable=False)
+    encounter_id = Column(String, ForeignKey("encounters.encounter_id"), nullable=False)
+    icd10_code = Column(String, nullable=True)  # e.g., 'E11', 'E11.22'
+    description = Column(String, nullable=False)  # e.g., 'Type 2 Diabetes Mellitus'
+    recorded_date = Column(String, nullable=False)  # ISO 8601
+    created_at = Column(String, nullable=False)  # ISO 8601
+
+    # Relationships
+    patient = relationship("Patient", back_populates="diagnoses")
+    encounter = relationship("Encounter", back_populates="diagnoses")
+
+    # Index for efficient queries
+    __table_args__ = (
+        Index("idx_diagnoses_patient_date", "patient_id", "recorded_date"),
+    )
+
+    def __repr__(self):
+        return f"<Diagnosis(diagnosis_id={self.diagnosis_id}, icd10_code={self.icd10_code})>"
+
+
+class Procedure(Base):
+    """Clinical procedures (NEW)."""
+    __tablename__ = "procedures"
+
+    procedure_id = Column(String, primary_key=True)
+    patient_id = Column(String, ForeignKey("patients.patient_id"), nullable=False)
+    encounter_id = Column(String, ForeignKey("encounters.encounter_id"), nullable=False)
+    procedure_code = Column(String, nullable=True)  # CPT or ICD-10-PCS
+    description = Column(String, nullable=False)
+    procedure_date = Column(String, nullable=False)  # ISO 8601
+    created_at = Column(String, nullable=False)  # ISO 8601
+
+    # Relationships
+    patient = relationship("Patient", back_populates="procedures")
+    encounter = relationship("Encounter", back_populates="procedures")
+
+    # Index for efficient queries
+    __table_args__ = (
+        Index("idx_procedures_patient_date", "patient_id", "procedure_date"),
+    )
+
+    def __repr__(self):
+        return f"<Procedure(procedure_id={self.procedure_id}, description={self.description})>"
+
+
+class Admission(Base):
+    """Hospital admissions (NEW)."""
+    __tablename__ = "admissions"
+
+    admission_id = Column(String, primary_key=True)
+    patient_id = Column(String, ForeignKey("patients.patient_id"), nullable=False)
+    admission_date = Column(String, nullable=False)  # ISO 8601
+    discharge_date = Column(String, nullable=True)  # ISO 8601
+    length_of_stay_days = Column(Integer, nullable=True)
+    admission_reason = Column(String, nullable=True)
+    discharge_summary = Column(String, nullable=True)
+    created_at = Column(String, nullable=False)  # ISO 8601
+
+    # Relationships
+    patient = relationship("Patient", back_populates="admissions")
+
+    # Index for efficient queries
+    __table_args__ = (
+        Index("idx_admissions_patient_date", "patient_id", "admission_date"),
+    )
+
+    def __repr__(self):
+        return f"<Admission(admission_id={self.admission_id}, admission_date={self.admission_date})>"

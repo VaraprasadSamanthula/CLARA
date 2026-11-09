@@ -18,10 +18,9 @@ import {
 
 interface LabChartProps {
   data: LabTrendResponse;
-  testName?: string;
 }
 
-export function LabChart({ data, testName }: LabChartProps) {
+export function LabChart({ data }: LabChartProps) {
   // Parse reference range (e.g., "4.0-6.0" -> min: 4.0, max: 6.0)
   let refMin = 0;
   let refMax = 0;

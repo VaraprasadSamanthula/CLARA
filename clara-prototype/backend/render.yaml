@@ -1,0 +1,42 @@
+# Render.com deployment configuration for CLARA backend
+
+services:
+  - type: web
+    name: clara-backend
+    runtime: python
+    pythonVersion: 3.11
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: clara-postgres
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: LLM_PROVIDER
+        value: mock
+      - key: CORS_ORIGINS
+        value: '["https://clara-frontend.onrender.com"]'
+
+  - type: web
+    name: clara-frontend
+    runtime: node
+    nodeVersion: 18
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm run preview
+    staticSite: true
+    buildDir: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://clara-backend.onrender.com
+
+databases:
+  - name: clara-postgres
+    databaseName: clara_prod
+    user: clara_user
+    plan: free

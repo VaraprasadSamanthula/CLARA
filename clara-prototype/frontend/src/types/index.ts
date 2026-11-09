@@ -121,3 +121,37 @@ export interface LoadingState {
   isLoading: boolean;
   error: string | null;
 }
+
+// ===== Diagnosis =====
+export interface Diagnosis {
+  diagnosis_id: string;
+  patient_id: string;
+  encounter_id: string;
+  icd10_code: string | null;
+  description: string;
+  recorded_date: string;
+  created_at: string;
+}
+
+// ===== Procedure =====
+export interface Procedure {
+  procedure_id: string;
+  patient_id: string;
+  encounter_id: string;
+  procedure_code: string | null;
+  description: string;
+  procedure_date: string;
+  created_at: string;
+}
+
+// ===== Admission =====
+export interface Admission {
+  admission_id: string;
+  patient_id: string;
+  admission_date: string;
+  discharge_date: string | null;
+  length_of_stay_days: number | null;
+  admission_reason: string | null;
+  discharge_summary: string | null;
+  created_at: string;
+}

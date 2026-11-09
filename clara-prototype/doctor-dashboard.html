@@ -65,6 +65,7 @@
             gap: 12px;
             margin-bottom: 20px;
             border-bottom: 2px solid #e0e0e0;
+            overflow-x: auto;
         }
 
         .tab-button {
@@ -78,6 +79,7 @@
             border-bottom: 3px solid transparent;
             margin-bottom: -2px;
             transition: all 0.3s;
+            white-space: nowrap;
         }
 
         .tab-button.active {
@@ -158,6 +160,11 @@
             transform: translateY(-2px);
         }
 
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -233,6 +240,94 @@
             font-size: 12px;
             color: #666;
         }
+
+        /* Chat Styles */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fafafa;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chat-message {
+            padding: 12px;
+            border-radius: 4px;
+            word-wrap: break-word;
+            max-width: 80%;
+            line-height: 1.4;
+            font-size: 14px;
+        }
+
+        .chat-message.user {
+            background-color: #667eea;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .chat-message.ai {
+            background-color: white;
+            color: #333;
+            border: 1px solid #ddd;
+            align-self: flex-start;
+        }
+
+        .chat-input-area {
+            padding: 12px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .chat-input-area button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .chat-input-area button:hover {
+            transform: translateY(-2px);
+        }
+
+        .chat-input-area button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .chat-info {
+            background-color: #e8f4f8;
+            border: 1px solid #b3dbe8;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 16px;
+            color: #2c5aa0;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -248,6 +343,7 @@
 
         <div class="tabs">
             <button class="tab-button active" onclick="switchTab('view')">View Records</button>
+            <button class="tab-button" onclick="switchTab('chat')">💬 Ask AI</button>
             <button class="tab-button" onclick="switchTab('encounter')">Add Encounter</button>
             <button class="tab-button" onclick="switchTab('medication')">Add Medication</button>
             <button class="tab-button" onclick="switchTab('lab')">Add Lab Result</button>
@@ -259,6 +355,28 @@
             <label>Select Patient:</label>
             <div class="patient-selector" id="patient-selector"></div>
             <div id="patient-records"></div>
+        </div>
+
+        <!-- Chat Tab -->
+        <div id="chat-tab" class="section">
+            <h2>💬 Ask AI About Patient</h2>
+            <div class="chat-info">
+                ℹ️ Ask natural language questions about the patient. The AI will answer based on their complete medical history.
+            </div>
+            <label>Select Patient:</label>
+            <div class="patient-selector" id="chat-patient-selector"></div>
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages"></div>
+                <div class="chat-input-area">
+                    <input 
+                        type="text" 
+                        id="chat-input" 
+                        placeholder="e.g., What medications is the patient on? Any recent lab abnormalities?"
+                        onkeypress="handleChatKeypress(event)"
+                    >
+                    <button onclick="handleChatSubmit()" id="chat-send-btn">Send</button>
+                </div>
+            </div>
         </div>
 
         <!-- Add Encounter Tab -->
@@ -377,6 +495,8 @@
     <script>
         const API_URL = 'http://localhost:8000';
         let selectedPatientId = 'PAT001';
+        let chatPatientId = 'PAT001';
+        let chatMessages = [];
 
         // Check authentication on page load
         window.addEventListener('DOMContentLoaded', function() {
@@ -411,8 +531,12 @@
 
             if (tabName === 'view') {
                 loadPatientList();
+            } else if (tabName === 'chat') {
+                loadChatPatientList();
             }
         }
+
+        // ============ VIEW RECORDS TAB ============
 
         async function loadPatientList() {
             try {
@@ -440,10 +564,10 @@
             selectedPatientId = patientId;
             
             // Update active card
-            document.querySelectorAll('.patient-card').forEach(card => {
+            document.querySelectorAll('#patient-selector .patient-card').forEach(card => {
                 card.classList.remove('active');
             });
-            event.target.closest('.patient-card').classList.add('active');
+            document.querySelector(`#patient-selector .patient-card[onclick="loadPatientRecords('${patientId}')"]`)?.classList.add('active');
 
             try {
                 const response = await fetch(`${API_URL}/api/patients/${patientId}`);
@@ -497,22 +621,282 @@
             }
         }
 
-        function handleAddEncounter(e) {
-            e.preventDefault();
-            showSuccess('encounter-success');
-            e.target.reset();
+        // ============ CHAT TAB ============
+
+        async function loadChatPatientList() {
+            try {
+                const response = await fetch(`${API_URL}/api/patients`);
+                const data = await response.json();
+
+                let html = '';
+                for (const patient of data.patients) {
+                    html += `
+                        <div class="patient-card ${patient.patient_id === chatPatientId ? 'active' : ''}" onclick="switchChatPatient('${patient.patient_id}')">
+                            <div class="patient-name">${patient.display_name}</div>
+                            <div class="patient-id">${patient.patient_id}</div>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('chat-patient-selector').innerHTML = html;
+                displayChatMessages();
+            } catch (error) {
+                console.error('Error:', error);
+            }
         }
 
-        function handleAddMedication(e) {
-            e.preventDefault();
-            showSuccess('medication-success');
-            e.target.reset();
+        function switchChatPatient(patientId) {
+            chatPatientId = patientId;
+            chatMessages = [];
+            
+            // Update active card
+            document.querySelectorAll('#chat-patient-selector .patient-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            document.querySelector(`#chat-patient-selector .patient-card[onclick="switchChatPatient('${patientId}')"]`)?.classList.add('active');
+            
+            displayChatMessages();
         }
 
-        function handleAddLab(e) {
+        function displayChatMessages() {
+            const messagesContainer = document.getElementById('chat-messages');
+            messagesContainer.innerHTML = '';
+            
+            for (const msg of chatMessages) {
+                const msgEl = document.createElement('div');
+                msgEl.className = `chat-message ${msg.role}`;
+                msgEl.textContent = msg.text;
+                messagesContainer.appendChild(msgEl);
+            }
+            
+            // Auto-scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function handleChatKeypress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                handleChatSubmit();
+            }
+        }
+
+        async function handleChatSubmit() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            const sendBtn = document.getElementById('chat-send-btn');
+            const originalText = sendBtn.textContent;
+            
+            try {
+                // Add user message to chat
+                chatMessages.push({
+                    role: 'user',
+                    text: message
+                });
+                displayChatMessages();
+                
+                // Clear input
+                input.value = '';
+                
+                // Show loading indicator
+                sendBtn.disabled = true;
+                sendBtn.textContent = '⏳ Thinking...';
+                
+                // Send to backend
+                const response = await fetch(
+                    `${API_URL}/api/patients/${chatPatientId}/chat`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            message: message
+                        })
+                    }
+                );
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to get response');
+                }
+                
+                const result = await response.json();
+                
+                // Add AI response to chat
+                chatMessages.push({
+                    role: 'ai',
+                    text: result.response
+                });
+                displayChatMessages();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                chatMessages.push({
+                    role: 'ai',
+                    text: `Error: ${error.message}`
+                });
+                displayChatMessages();
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = originalText;
+                input.focus();
+            }
+        }
+
+        // ============ FORM HANDLERS ============
+
+        async function handleAddEncounter(e) {
             e.preventDefault();
-            showSuccess('lab-success');
-            e.target.reset();
+            
+            const button = e.target.querySelector('.submit-btn');
+            const originalText = button.textContent;
+            button.textContent = '⏳ Saving...';
+            button.disabled = true;
+            
+            try {
+                const patientId = document.getElementById('encounter-patient').value;
+                const encounterDate = document.getElementById('encounter-date').value;
+                const encounterType = document.getElementById('encounter-type').value;
+                const summary = document.getElementById('encounter-summary').value;
+
+                const response = await fetch(
+                    `${API_URL}/api/patients/${patientId}/encounters`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            encounter_date: encounterDate,
+                            encounter_type: encounterType,
+                            summary: summary
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to add encounter');
+                }
+
+                const result = await response.json();
+                showSuccess('encounter-success');
+                e.target.reset();
+                
+                // Refresh View Records if patient is selected
+                if (selectedPatientId === patientId) {
+                    loadPatientRecords(patientId);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                console.error('Error:', error);
+            } finally {
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        }
+
+        async function handleAddMedication(e) {
+            e.preventDefault();
+            
+            const button = e.target.querySelector('.submit-btn');
+            const originalText = button.textContent;
+            button.textContent = '⏳ Saving...';
+            button.disabled = true;
+            
+            try {
+                const patientId = document.getElementById('medication-patient').value;
+                const medicationName = document.getElementById('medication-name').value;
+                const dose = document.getElementById('medication-dose').value;
+                const status = document.getElementById('medication-status').value;
+                const today = new Date().toISOString().split('T')[0];
+
+                const response = await fetch(
+                    `${API_URL}/api/patients/${patientId}/medications`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            medication_name: medicationName,
+                            dose_text: dose,
+                            status: status,
+                            recorded_date: today
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to add medication');
+                }
+
+                const result = await response.json();
+                showSuccess('medication-success');
+                e.target.reset();
+                
+                // Refresh View Records if patient is selected
+                if (selectedPatientId === patientId) {
+                    loadPatientRecords(patientId);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                console.error('Error:', error);
+            } finally {
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        }
+
+        async function handleAddLab(e) {
+            e.preventDefault();
+            
+            const button = e.target.querySelector('.submit-btn');
+            const originalText = button.textContent;
+            button.textContent = '⏳ Saving...';
+            button.disabled = true;
+            
+            try {
+                const patientId = document.getElementById('lab-patient').value;
+                const testName = document.getElementById('lab-name').value;
+                const value = parseFloat(document.getElementById('lab-value').value);
+                const unit = document.getElementById('lab-unit').value;
+                const reference = document.getElementById('lab-reference').value;
+                const labDate = document.getElementById('lab-date').value;
+
+                const response = await fetch(
+                    `${API_URL}/api/patients/${patientId}/labs`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            test_name: testName,
+                            value: value,
+                            unit: unit,
+                            reference_range_text: reference || null,
+                            recorded_date: labDate
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to add lab result');
+                }
+
+                const result = await response.json();
+                showSuccess('lab-success');
+                e.target.reset();
+                
+                // Refresh View Records if patient is selected
+                if (selectedPatientId === patientId) {
+                    loadPatientRecords(patientId);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                console.error('Error:', error);
+            } finally {
+                button.textContent = originalText;
+                button.disabled = false;
+            }
         }
 
         function showSuccess(elementId) {

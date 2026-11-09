@@ -180,7 +180,8 @@ class HealthCheckResponse(BaseModel):
     status: str
     version: str
     db_connected: bool
-    ollama_available: bool
+    llm_available: bool
+    llm_provider: Optional[str] = None
 
 
 # ============ Error Schemas ============

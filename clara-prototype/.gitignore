@@ -38,3 +38,18 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Database WAL files
+*.db-shm
+*.db-wal
+
+# Production/Staging env files (keep templates, ignore actual secrets)
+.env.production
+.env.staging
+
+# Build artifacts
+backend/build/
+frontend/dist/
+
+# Test cache
+.pytest_cache/

@@ -317,6 +317,12 @@
             <div id="encounters-list"></div>
         </div>
 
+        <!-- AI Summary Section -->
+        <div id="summary-section" class="section" style="display: none;">
+            <h2>🤖 Clinical Summary (AI-Generated)</h2>
+            <div id="summary-content"></div>
+        </div>
+
         <!-- Medications Section -->
         <div id="medications-section" class="section" style="display: none;">
             <h2>💊 Your Active Medications</h2>
@@ -410,6 +416,7 @@
                 displayDiagnosis(patientId);
                 displayDoctor();
                 displayEncounters(data);
+                displaySummary(patientId);
                 displayMedications(data);
                 displayLabs(data);
                 displayInfo();
@@ -502,6 +509,46 @@
             document.getElementById('encounters-list').innerHTML = html;
             document.getElementById('encounters-section').style.display = 'block';
             console.log('Encounters displayed');
+        }
+
+        async function displaySummary(patientId) {
+            try {
+                const response = await fetch(`${API_URL}/api/patients/${patientId}/summary`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to generate summary: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                const modeLabel = data.mode === 'local_llm' ? '🧠 AI-Powered (LLM)' : '📋 Template-Based';
+                const modeColor = data.mode === 'local_llm' ? '#667eea' : '#666';
+
+                const html = `
+                    <div style="background-color: #f0f4ff; padding: 16px; border-radius: 4px; margin-bottom: 16px;">
+                        <div style="font-size: 14px; color: ${modeColor}; margin-bottom: 8px;">
+                            <strong>${modeLabel}</strong>
+                        </div>
+                        <p style="line-height: 1.8; color: #333; margin-bottom: 16px;">
+                            ${data.summary_text}
+                        </p>
+                        <div style="font-size: 12px; color: #999; border-top: 1px solid #ddd; padding-top: 12px; margin-top: 12px;">
+                            <strong>⚠️ Disclaimer:</strong> ${data.status}
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('summary-content').innerHTML = html;
+                document.getElementById('summary-section').style.display = 'block';
+                console.log('Summary displayed:', data.mode);
+            } catch (error) {
+                console.error('Error loading summary:', error);
+                // Don't show error, just skip summary
+            }
         }
 
         function displayMedications(data) {

@@ -10,11 +10,12 @@
 CLARA Prototype 1 is a synthetic demo system showcasing:
 - ✅ **Multi-role Authentication** (Patient, Doctor, Admin)
 - ✅ **Patient Dashboard** - View medical diagnoses, medications, lab results, and encounters
-- ✅ **Doctor Dashboard** - Access patient records, add encounters, medications, and labs
+- ✅ **Doctor Dashboard** - Access patient records, ⭐ **AI Chatbot for natural language queries**, add encounters, medications, and labs
 - ✅ **Admin Dashboard** - System management and user oversight
 - ✅ **FastAPI Backend** - RESTful API with SQLite database
 - ✅ **HTML/JavaScript Frontend** - Client-side session management
-- ✅ **Complete Test Suite** - 36+ unit and integration tests
+- ✅ **AI-Powered Chat Interface** - Conversational queries about patient medical history
+- ✅ **Complete Test Suite** - 36+ unit and integration tests + chatbot tests
 
 > ⚠️ **Note**: This is synthetic demo data for development purposes only—not suitable for clinical use.
 
@@ -226,12 +227,17 @@ After login, patients see 7 sections:
    - Lifestyle recommendations
 
 ### 👨‍⚕️ Doctor Dashboard
-Four tabs for clinical record management:
+Five tabs for clinical record management and AI-powered queries:
 
 1. **View Records** - Search and view patient data
-2. **Add Encounter** - Record clinic visits and summaries
-3. **Add Medication** - Prescribe medications
-4. **Add Lab** - Record lab test results
+2. **💬 Ask AI** ⭐ **NEW** - Conversational chatbot interface
+   - Ask natural language questions about patient medical history
+   - AI responds with conversational summaries based on complete patient record
+   - Works with LLM (Ollama) or template-based fallback
+   - Example: "What medications is the patient on?" → AI provides detailed answer
+3. **Add Encounter** - Record clinic visits and summaries
+4. **Add Medication** - Prescribe medications
+5. **Add Lab** - Record lab test results
 
 ### ⚙️ Admin Dashboard
 Four tabs for system management:

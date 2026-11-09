@@ -31,7 +31,7 @@ export function useLabTrendData(
       try {
         setLoading(true);
         setError(null);
-        const response = await apiClient.getLabTrend(patientId, testName);
+        const response = await apiClient.getLabTrend(patientId as string, testName);
         setData(response);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch lab data');

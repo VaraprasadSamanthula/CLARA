@@ -53,7 +53,7 @@ export function Timeline({ patientId }: TimelineProps) {
       <h3>Full Timeline ({timeline.timeline.length} encounters)</h3>
 
       <div style={{ marginTop: '16px' }}>
-        {timeline.timeline.map((encounter, idx) => (
+        {timeline.timeline.map((encounter) => (
           <div key={encounter.encounter_id} style={{ marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid #eee' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '8px' }}>
               <strong>{encounter.encounter_date}</strong>

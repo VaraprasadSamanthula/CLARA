@@ -1,21 +1,29 @@
 """Database setup, session management, and utilities."""
 
-import os
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.pool import StaticPool, QueuePool
 from app.models import Base
+from config import settings
 
-# Use SQLite local file; default path is ./clara.db relative to where we run uvicorn
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./clara.db")
-
-# SQLite-specific optimizations for WAL mode (better concurrency)
-if DATABASE_URL.startswith("sqlite"):
+# Configure engine based on database type
+if settings.database_url.startswith("postgresql"):
+    # PostgreSQL configuration with connection pooling for production
     engine = create_engine(
-        DATABASE_URL,
+        settings.database_url,
+        poolclass=QueuePool,
+        pool_size=settings.get_database_engine_args().get("pool_size", 20),
+        max_overflow=settings.get_database_engine_args().get("max_overflow", 10),
+        pool_recycle=settings.get_database_engine_args().get("pool_recycle", 3600),
+        echo=settings.get_database_engine_args().get("echo", False),
+    )
+elif settings.database_url.startswith("sqlite"):
+    # SQLite configuration with WAL mode for better concurrency
+    engine = create_engine(
+        settings.database_url,
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
-        echo=False,  # Set to True for SQL debugging
+        echo=False,
     )
     
     # Enable WAL mode for better concurrency
@@ -25,7 +33,7 @@ if DATABASE_URL.startswith("sqlite"):
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.close()
 else:
-    engine = create_engine(DATABASE_URL)
+    raise ValueError(f"Unsupported database URL: {settings.database_url}")
 
 # Session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

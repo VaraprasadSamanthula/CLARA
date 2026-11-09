@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: clara-postgres
+    environment:
+      POSTGRES_DB: clara_dev
+      POSTGRES_USER: clara_user
+      POSTGRES_PASSWORD: clara_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clara_user -d clara_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend service
+  backend:
+    build: ./clara-prototype/backend
+    container_name: clara-backend
+    environment:
+      DATABASE_URL: postgresql://clara_user:clara_password@postgres:5432/clara_dev
+      ENVIRONMENT: development
+      DEBUG: "true"
+      LLM_PROVIDER: mock
+      SECRET_KEY: dev-secret-key-for-testing
+      CORS_ORIGINS: '["http://localhost:3000", "http://localhost:5173"]'
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./clara-prototype/backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend service (requires npm install first)
+  frontend:
+    image: node:18-alpine
+    container_name: clara-frontend
+    working_dir: /app
+    environment:
+      VITE_API_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./clara-prototype/frontend:/app
+    command: sh -c "npm install && npm run dev"
+
+volumes:
+  postgres_data:
+    driver: local
