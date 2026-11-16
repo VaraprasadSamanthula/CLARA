@@ -109,25 +109,74 @@ export default function ImportPatientPage() {
     }
   };
 
-  const downloadTemplate = (format) => {
-    const headers = ['full_name', 'date_of_birth', 'gender', 'phone_number', 'email', 'address', 'registration_date'];
-    const sample = [
-      ['John Doe', '1985-06-20', 'M', '555-123-4567', 'john@example.com', '123 Main St', '2026-11-16'],
-      ['Jane Smith', '1990-01-15', 'F', '555-987-6543', 'jane@example.com', '456 Oak Ave', '2026-11-16'],
-    ];
+  const downloadTemplate = async (format) => {
+    try {
+      const response = await fetch(`/api/patients/import/template?format=${format}`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        setError(error.error || `Failed to download ${format.toUpperCase()} template`);
+        return;
+      }
 
-    if (format === 'csv') {
-      const csv = [headers.join(','), ...sample.map(row => row.map(v => `"${v}"`).join(','))].join('\n');
-      const blob = new Blob([csv], { type: 'text/csv' });
+      // Get the file content
+      const blob = await response.blob();
+      
+      // Determine filename and MIME type
+      let filename, mimeType;
+      if (format === 'csv') {
+        filename = 'CLARA_Patient_Import_Template.csv';
+        mimeType = 'text/csv';
+      } else {
+        filename = 'CLARA_Patient_Import_Template.xlsx';
+        mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      }
+
+      // Create download link
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'import_template.csv';
-      a.click();
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       URL.revokeObjectURL(url);
-    } else if (format === 'xlsx') {
-      // For Excel, just download CSV for now (full xlsx support requires xlsx library)
-      alert('Excel template download requires additional setup. Please use the CSV template.');
+
+      setError('');
+    } catch (err) {
+      setError(`Failed to download ${format.toUpperCase()} template: ${err.message}`);
+    }
+  };
+
+  const downloadErrorReport = async () => {
+    if (!previewId) return;
+
+    try {
+      const response = await fetch(`/api/patients/import/errors?preview_id=${previewId}`);
+
+      if (!response.ok) {
+        const error = await response.json();
+        setError(error.error || 'Failed to download error report');
+        return;
+      }
+
+      // Get the CSV content
+      const blob = await response.blob();
+      const filename = `CLARA_Import_Errors_${previewId.substring(0, 8)}.csv`;
+
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setError('');
+    } catch (err) {
+      setError(`Failed to download error report: ${err.message}`);
     }
   };
 
@@ -268,29 +317,41 @@ export default function ImportPatientPage() {
                   )}
 
                   {/* Actions */}
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      onClick={handleConfirmImport}
-                      disabled={importing || preview.valid_rows === 0}
-                      className={`flex-1 px-4 py-3 rounded-md font-medium transition-colors ${
-                        importing || preview.valid_rows === 0
-                          ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
-                          : 'bg-green-600 text-white hover:bg-green-700'
-                      }`}
-                    >
-                      {importing ? 'Importing...' : `Import ${preview.valid_rows} Valid Rows`}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setPreviewing(false);
-                        setPreview(null);
-                        setPreviewId(null);
-                      }}
-                      disabled={importing}
-                      className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100"
-                    >
-                      Back
-                    </button>
+                  <div className="space-y-3 pt-4">
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleConfirmImport}
+                        disabled={importing || preview.valid_rows === 0}
+                        className={`flex-1 px-4 py-3 rounded-md font-medium transition-colors ${
+                          importing || preview.valid_rows === 0
+                            ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                            : 'bg-green-600 text-white hover:bg-green-700'
+                        }`}
+                      >
+                        {importing ? 'Importing...' : `Import ${preview.valid_rows} Valid Rows`}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setPreviewing(false);
+                          setPreview(null);
+                          setPreviewId(null);
+                        }}
+                        disabled={importing}
+                        className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100"
+                      >
+                        Back
+                      </button>
+                    </div>
+                    
+                    {(preview.invalid_rows > 0 || preview.duplicate_rows > 0) && (
+                      <button
+                        onClick={() => downloadErrorReport()}
+                        disabled={importing}
+                        className="w-full px-4 py-2 border border-orange-300 text-orange-700 rounded-md hover:bg-orange-50 text-sm font-medium"
+                      >
+                        📥 Download Error Report ({preview.invalid_rows + preview.duplicate_rows} issues)
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -304,7 +365,7 @@ export default function ImportPatientPage() {
               <li>• Supported formats: CSV and Excel (XLSX)</li>
               <li>• Maximum file size: 5 MB</li>
               <li>• Required field: full_name</li>
-              <li>• Optional fields: date_of_birth, gender, phone_number, email, address</li>
+              <li>• Optional fields: date_of_birth, gender, phone, email, address</li>
               <li>• Duplicates (same name + DOB) will be skipped</li>
               <li>• All rows are validated before import</li>
               <li>• Date format must be YYYY-MM-DD</li>
