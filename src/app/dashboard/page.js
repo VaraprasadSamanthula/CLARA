@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Send, LogOut, Settings, MessageSquare, Search, User } from 'lucide-react';
+import { Send, LogOut, Settings, MessageSquare, Search, User, UserPlus } from 'lucide-react';
 import PatientSearch from '../../components/PatientSearch';
 import PatientProfile from '../../components/PatientProfile';
 
@@ -129,45 +129,54 @@ export default function Dashboard() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="border-t border-amber-700/20 px-6 flex gap-1 bg-amber-950/20">
-          <button
-            onClick={() => {
-              setActiveTab('chat');
-              setSelectedPatient(null);
-            }}
-            className={`flex items-center gap-2 px-4 py-3 font-medium text-sm border-b-2 transition ${
-              activeTab === 'chat'
-                ? 'text-cyan-300 border-cyan-400'
-                : 'text-amber-200 border-transparent hover:text-amber-50'
-            }`}
-          >
-            <MessageSquare size={18} />
-            Chat
-          </button>
-          <button
-            onClick={() => setActiveTab('search')}
-            className={`flex items-center gap-2 px-4 py-3 font-medium text-sm border-b-2 transition ${
-              activeTab === 'search'
-                ? 'text-cyan-300 border-cyan-400'
-                : 'text-amber-200 border-transparent hover:text-amber-50'
-            }`}
-          >
-            <Search size={18} />
-            Search
-          </button>
-          {selectedPatient && (
+        <div className="border-t border-amber-700/20 px-6 flex gap-1 bg-amber-950/20 justify-between items-center">
+          <div className="flex gap-1">
             <button
-              onClick={() => setActiveTab('profile')}
+              onClick={() => {
+                setActiveTab('chat');
+                setSelectedPatient(null);
+              }}
               className={`flex items-center gap-2 px-4 py-3 font-medium text-sm border-b-2 transition ${
-                activeTab === 'profile'
+                activeTab === 'chat'
                   ? 'text-cyan-300 border-cyan-400'
                   : 'text-amber-200 border-transparent hover:text-amber-50'
               }`}
             >
-              <User size={18} />
-              Patient #{selectedPatient}
+              <MessageSquare size={18} />
+              Chat
             </button>
-          )}
+            <button
+              onClick={() => setActiveTab('search')}
+              className={`flex items-center gap-2 px-4 py-3 font-medium text-sm border-b-2 transition ${
+                activeTab === 'search'
+                  ? 'text-cyan-300 border-cyan-400'
+                  : 'text-amber-200 border-transparent hover:text-amber-50'
+              }`}
+            >
+              <Search size={18} />
+              Search
+            </button>
+            {selectedPatient && (
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`flex items-center gap-2 px-4 py-3 font-medium text-sm border-b-2 transition ${
+                  activeTab === 'profile'
+                    ? 'text-cyan-300 border-cyan-400'
+                    : 'text-amber-200 border-transparent hover:text-amber-50'
+                }`}
+              >
+                <User size={18} />
+                Patient #{selectedPatient}
+              </button>
+            )}
+          </div>
+          <button
+            onClick={() => router.push('/patients/register')}
+            className="flex items-center gap-2 px-4 py-3 font-medium text-sm border-b-2 border-transparent text-amber-200 hover:text-cyan-300 transition"
+          >
+            <UserPlus size={18} />
+            Add Patient
+          </button>
         </div>
 
         {/* Settings Panel */}
