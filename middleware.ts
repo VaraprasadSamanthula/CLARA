@@ -20,8 +20,14 @@ export function middleware(request: NextRequest) {
   
   const isAuthenticated = sessionId || legacyAuth;
 
+  // Protected routes that require authentication
+  const protectedRoutes = ['/', '/dashboard', '/patients/register', '/patients/import'];
+  const isProtectedRoute = protectedRoutes.some(route => 
+    path === route || path.startsWith(route + '/')
+  );
+
   // If not authenticated and trying to access protected route, redirect to login
-  if (!isAuthenticated && (path === '/dashboard' || path === '/')) {
+  if (!isAuthenticated && isProtectedRoute) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 

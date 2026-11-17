@@ -40,10 +40,10 @@ export default function PatientProfile({ patientId, onBack }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="flex flex-col items-center gap-3">
-          <Loader size={32} className="text-cyan-400 animate-spin" />
-          <p className="text-amber-200">Loading patient profile...</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 'var(--spacing-2xl)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+          <Loader size={32} style={{ color: 'var(--primary)', animation: 'spin 1s linear infinite' }} />
+          <p style={{ color: 'var(--text-secondary)' }}>Loading patient profile...</p>
         </div>
       </div>
     );
@@ -51,19 +51,17 @@ export default function PatientProfile({ patientId, onBack }) {
 
   if (error) {
     return (
-      <div className="space-y-4">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 mb-4"
+          style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', marginBottom: 'var(--spacing-lg)', padding: 0 }}
         >
           <ArrowLeft size={18} />
           Back to Search
         </button>
-        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded">
-          <div className="flex items-start gap-2">
-            <AlertCircle size={18} className="text-red-400 flex-shrink-0 mt-0.5" />
-            <p className="text-red-400">{error}</p>
-          </div>
+        <div style={{ padding: 'var(--spacing-lg)', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--radius-lg)', display: 'flex', gap: 'var(--spacing-md)' }}>
+          <AlertCircle size={18} style={{ color: 'var(--error)', flexShrink: 0, marginTop: '2px' }} />
+          <p style={{ color: 'var(--error)', fontSize: '0.875rem' }}>{error}</p>
         </div>
       </div>
     );
@@ -74,41 +72,42 @@ export default function PatientProfile({ patientId, onBack }) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2xl)' }}>
+      {/* Back Button */}
       <button
         onClick={onBack}
-        className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300"
+        style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', padding: 0 }}
       >
         <ArrowLeft size={18} />
         Back to Search
       </button>
 
-      {/* Patient Header */}
-      <div className="glass rounded-lg p-6">
-        <div className="flex justify-between items-start mb-4">
+      {/* Patient Header Card */}
+      <div className="card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--spacing-lg)' }}>
           <div>
-            <h2 className="text-2xl font-bold text-cyan-300 mb-1">Patient #{patient.id}</h2>
-            <div className="flex items-center gap-3">
-              <span className="text-amber-200 text-sm">{patient.source}</span>
-              {patient.fullName && <p className="text-amber-200">{patient.fullName}</p>}
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 'var(--spacing-sm)', color: 'var(--primary)' }}>Patient #{patient.id}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{patient.source}</span>
+              {patient.fullName && <p style={{ color: 'var(--text-secondary)' }}>{patient.fullName}</p>}
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-amber-50"><span className="font-medium">Gender:</span> {patient.gender}</p>
-            {patient.age !== null && patient.age !== undefined && <p className="text-amber-50"><span className="font-medium">Age:</span> {patient.age}</p>}
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ color: 'var(--text-primary)', marginBottom: 'var(--spacing-xs)' }}><span style={{ fontWeight: 600 }}>Gender:</span> {patient.gender}</p>
+            {patient.age !== null && patient.age !== undefined && <p style={{ color: 'var(--text-primary)' }}><span style={{ fontWeight: 600 }}>Age:</span> {patient.age}</p>}
           </div>
         </div>
 
         {patient.dateOfDeath && (
-          <div className="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded text-yellow-400 text-sm">
-            ⚠ Patient deceased: {patient.dateOfDeath}
+          <div style={{ padding: 'var(--spacing-md)', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 'var(--radius-lg)', color: '#92400e', fontSize: '0.875rem', display: 'flex', gap: 'var(--spacing-md)', alignItems: 'flex-start' }}>
+            <span>⚠</span>
+            <span>Patient deceased: {patient.dateOfDeath}</span>
           </div>
         )}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-amber-700/20 overflow-x-auto">
+      <div style={{ display: 'flex', gap: 'var(--spacing-md)', borderBottom: '1px solid var(--border)', overflowX: 'auto' }}>
         {[
           { id: 'demographics', label: 'Demographics' },
           ...(patient.source === 'MIMIC' ? [
@@ -123,11 +122,17 @@ export default function PatientProfile({ patientId, onBack }) {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 font-medium text-sm transition ${
-              activeTab === tab.id
-                ? 'text-cyan-300 border-b-2 border-cyan-400'
-                : 'text-amber-200 hover:text-amber-50'
-            }`}
+            style={{
+              padding: 'var(--spacing-md)',
+              fontWeight: 500,
+              fontSize: '0.875rem',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: activeTab === tab.id ? 'var(--primary)' : 'var(--text-secondary)',
+              borderBottom: activeTab === tab.id ? '2px solid var(--primary)' : '2px solid transparent',
+              transition: 'all 200ms ease'
+            }}
           >
             {tab.label}
           </button>
@@ -135,20 +140,20 @@ export default function PatientProfile({ patientId, onBack }) {
       </div>
 
       {/* Tab Content */}
-      <div className="glass rounded-lg p-6">
+      <div className="card">
         {activeTab === 'demographics' && (
-          <div className="space-y-2">
-            <p className="text-amber-50"><span className="font-medium">Patient ID:</span> {patient.id}</p>
-            <p className="text-amber-50"><span className="font-medium">Source:</span> {patient.source}</p>
-            {patient.fullName && <p className="text-amber-50"><span className="font-medium">Name:</span> {patient.fullName}</p>}
-            <p className="text-amber-50"><span className="font-medium">Gender:</span> {patient.gender}</p>
-            {patient.age !== null && patient.age !== undefined && <p className="text-amber-50"><span className="font-medium">Age:</span> {patient.age}</p>}
-            {patient.dateOfBirth && <p className="text-amber-50"><span className="font-medium">Date of Birth:</span> {new Date(patient.dateOfBirth).toLocaleDateString()}</p>}
-            {patient.phone && <p className="text-amber-50"><span className="font-medium">Phone:</span> {patient.phone}</p>}
-            {patient.email && <p className="text-amber-50"><span className="font-medium">Email:</span> {patient.email}</p>}
-            {patient.yearGroup && <p className="text-amber-50"><span className="font-medium">Year Group:</span> {patient.yearGroup}</p>}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+            <p style={{ color: 'var(--text-primary)' }}><span style={{ fontWeight: 600 }}>Patient ID:</span> {patient.id}</p>
+            <p style={{ color: 'var(--text-primary)' }}><span style={{ fontWeight: 600 }}>Source:</span> {patient.source}</p>
+            {patient.fullName && <p style={{ color: 'var(--text-primary)' }}><span style={{ fontWeight: 600 }}>Name:</span> {patient.fullName}</p>}
+            <p style={{ color: 'var(--text-primary)' }}><span style={{ fontWeight: 600 }}>Gender:</span> {patient.gender}</p>
+            {patient.age !== null && patient.age !== undefined && <p style={{ color: 'var(--text-primary)' }}><span style={{ fontWeight: 600 }}>Age:</span> {patient.age}</p>}
+            {patient.dateOfBirth && <p style={{ color: 'var(--text-primary)' }}><span style={{ fontWeight: 600 }}>Date of Birth:</span> {new Date(patient.dateOfBirth).toLocaleDateString()}</p>}
+            {patient.phone && <p style={{ color: 'var(--text-primary)' }}><span style={{ fontWeight: 600 }}>Phone:</span> {patient.phone}</p>}
+            {patient.email && <p style={{ color: 'var(--text-primary)' }}><span style={{ fontWeight: 600 }}>Email:</span> {patient.email}</p>}
+            {patient.yearGroup && <p style={{ color: 'var(--text-primary)' }}><span style={{ fontWeight: 600 }}>Year Group:</span> {patient.yearGroup}</p>}
             {patient.source === 'MIMIC' && !clinical && (
-              <p className="text-amber-300 text-sm mt-4">No clinical history available</p>
+              <p style={{ color: 'var(--warning)', fontSize: '0.875rem', marginTop: 'var(--spacing-lg)' }}>No clinical history available</p>
             )}
           </div>
         )}
@@ -183,17 +188,17 @@ export default function PatientProfile({ patientId, onBack }) {
 
 function AdminissionsTab({ admissions }) {
   if (!admissions || admissions.length === 0) {
-    return <p className="text-amber-300">No admission records found.</p>;
+    return <p style={{ color: 'var(--text-secondary)' }}>No admission records found.</p>;
   }
 
   return (
-    <div className="space-y-3">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
       {admissions.map((adm, idx) => (
-        <div key={idx} className="p-3 bg-amber-950/30 rounded border border-amber-700/20">
-          <p className="text-amber-50 font-medium">Admission #{idx + 1}</p>
-          <p className="text-sm text-amber-200">Admit: {new Date(adm.admittime).toLocaleDateString()}</p>
-          {adm.dischtime && <p className="text-sm text-amber-200">Discharge: {new Date(adm.dischtime).toLocaleDateString()}</p>}
-          <p className="text-sm text-amber-200">Type: {adm.admission_type}</p>
+        <div key={idx} style={{ padding: 'var(--spacing-md)', background: 'var(--background-secondary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
+          <p style={{ color: 'var(--text-primary)', fontWeight: 600, marginBottom: 'var(--spacing-xs)' }}>Admission #{idx + 1}</p>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Admit: {new Date(adm.admittime).toLocaleDateString()}</p>
+          {adm.dischtime && <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Discharge: {new Date(adm.dischtime).toLocaleDateString()}</p>}
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Type: {adm.admission_type}</p>
         </div>
       ))}
     </div>
@@ -202,14 +207,14 @@ function AdminissionsTab({ admissions }) {
 
 function DiagnosesTab({ diagnoses }) {
   if (!diagnoses || diagnoses.length === 0) {
-    return <p className="text-amber-300">No diagnosis records found.</p>;
+    return <p style={{ color: 'var(--text-secondary)' }}>No diagnosis records found.</p>;
   }
 
   return (
-    <div className="space-y-2">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
       {diagnoses.map((diag, idx) => (
-        <div key={idx} className="p-2 bg-amber-950/20 rounded text-sm text-amber-50">
-          <span className="font-medium">{diag.icd_code}</span> - {diag.long_title || 'N/A'}
+        <div key={idx} style={{ padding: 'var(--spacing-md)', background: 'var(--background-secondary)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+          <span style={{ fontWeight: 600 }}>{diag.icd_code}</span> - {diag.long_title || 'N/A'}
         </div>
       ))}
     </div>
@@ -218,17 +223,17 @@ function DiagnosesTab({ diagnoses }) {
 
 function PrescriptionsTab({ prescriptions }) {
   if (!prescriptions || prescriptions.length === 0) {
-    return <p className="text-amber-300">No prescription records found.</p>;
+    return <p style={{ color: 'var(--text-secondary)' }}>No prescription records found.</p>;
   }
 
   return (
-    <div className="space-y-3 max-h-96 overflow-y-auto">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)', maxHeight: '400px', overflowY: 'auto' }}>
       {prescriptions.map((rx, idx) => (
-        <div key={idx} className="p-3 bg-amber-950/30 rounded border border-amber-700/20">
-          <p className="text-amber-50 font-medium">{rx.drug}</p>
-          {rx.starttime && <p className="text-sm text-amber-200">Start: {new Date(rx.starttime).toLocaleDateString()}</p>}
-          {rx.dose_val_rx && <p className="text-sm text-amber-200">Dose: {rx.dose_val_rx} {rx.dose_unit_rx}</p>}
-          {rx.route && <p className="text-sm text-amber-200">Route: {rx.route}</p>}
+        <div key={idx} style={{ padding: 'var(--spacing-md)', background: 'var(--background-secondary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
+          <p style={{ color: 'var(--text-primary)', fontWeight: 600, marginBottom: 'var(--spacing-xs)' }}>{rx.drug}</p>
+          {rx.starttime && <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Start: {new Date(rx.starttime).toLocaleDateString()}</p>}
+          {rx.dose_val_rx && <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Dose: {rx.dose_val_rx} {rx.dose_unit_rx}</p>}
+          {rx.route && <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Route: {rx.route}</p>}
         </div>
       ))}
     </div>
@@ -237,16 +242,16 @@ function PrescriptionsTab({ prescriptions }) {
 
 function LabsTab({ labs }) {
   if (!labs || labs.length === 0) {
-    return <p className="text-amber-300">No lab results found.</p>;
+    return <p style={{ color: 'var(--text-secondary)' }}>No lab results found.</p>;
   }
 
   return (
-    <div className="space-y-3 max-h-96 overflow-y-auto">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)', maxHeight: '400px', overflowY: 'auto' }}>
       {labs.map((lab, idx) => (
-        <div key={idx} className="p-3 bg-amber-950/30 rounded border border-amber-700/20">
-          <p className="text-amber-50 font-medium">{lab.test_name || lab.itemid}</p>
-          {lab.value && <p className="text-sm text-amber-200">Value: {lab.value}</p>}
-          {lab.charttime && <p className="text-sm text-amber-200">Date: {new Date(lab.charttime).toLocaleDateString()}</p>}
+        <div key={idx} style={{ padding: 'var(--spacing-md)', background: 'var(--background-secondary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
+          <p style={{ color: 'var(--text-primary)', fontWeight: 600, marginBottom: 'var(--spacing-xs)' }}>{lab.test_name || lab.itemid}</p>
+          {lab.value && <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Value: {lab.value}</p>}
+          {lab.charttime && <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Date: {new Date(lab.charttime).toLocaleDateString()}</p>}
         </div>
       ))}
     </div>
@@ -255,17 +260,17 @@ function LabsTab({ labs }) {
 
 function ICUTab({ icu }) {
   if (!icu || icu.length === 0) {
-    return <p className="text-amber-300">No ICU stays found.</p>;
+    return <p style={{ color: 'var(--text-secondary)' }}>No ICU stays found.</p>;
   }
 
   return (
-    <div className="space-y-3">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
       {icu.map((stay, idx) => (
-        <div key={idx} className="p-3 bg-amber-950/30 rounded border border-amber-700/20">
-          <p className="text-amber-50 font-medium">ICU Stay #{idx + 1}</p>
-          {stay.first_careunit && <p className="text-sm text-amber-200">Unit: {stay.first_careunit}</p>}
-          {stay.intime && <p className="text-sm text-amber-200">In: {new Date(stay.intime).toLocaleDateString()}</p>}
-          {stay.los && <p className="text-sm text-amber-200">LOS: {stay.los} days</p>}
+        <div key={idx} style={{ padding: 'var(--spacing-md)', background: 'var(--background-secondary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
+          <p style={{ color: 'var(--text-primary)', fontWeight: 600, marginBottom: 'var(--spacing-xs)' }}>ICU Stay #{idx + 1}</p>
+          {stay.first_careunit && <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Unit: {stay.first_careunit}</p>}
+          {stay.intime && <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>In: {new Date(stay.intime).toLocaleDateString()}</p>}
+          {stay.los && <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>LOS: {stay.los} days</p>}
         </div>
       ))}
     </div>

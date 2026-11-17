@@ -1,9 +1,23 @@
-# CLARA: Medical SQL Chatbot
+# CLARA: Clinical Data Assistant
 
-An interactive clinical data exploration system for healthcare professionals to query medical databases using conversational natural language, without requiring SQL knowledge.
+An interactive clinical data exploration system for healthcare professionals to query and analyze medical records using natural language, without requiring SQL knowledge.
 
-**Status:** ✅ COMPLETE & PRODUCTION READY  
-**Last Updated:** November 16, 2026
+**Current Version:** 0.2.0 (Phase 2: UI/UX Redesign Complete)  
+**Status:** ✅ Fully Functional with Known Limitations  
+**Last Updated:** November 18, 2026
+
+---
+
+## Overview
+
+CLARA is a demonstration research platform that combines a pattern-based SQL chatbot with professional UI/UX for exploring clinical data. The system allows users to search patient records, view clinical histories, manage documents, and interact with AI-enhanced data retrieval—all through an intuitive web interface.
+
+**⚠️ Important Limitations:**
+- **Not Production-Ready for Real Clinical Use:** This is a demonstration/evaluation platform, not suitable for deployment in actual healthcare systems.
+- **Not HIPAA-Compliant:** The application does not meet HIPAA requirements and cannot be used with real patient data.
+- **Demo Data Only:** Includes 100 synthetic patients from MIMIC-IV. Do not use with real patient information.
+- **Pattern-Based Chatbot:** Uses SQL pattern matching for queries, not AI/LLM-based natural language understanding.
+- **Research Purpose:** Designed for UROP evaluation and technology demonstration only.
 
 ---
 
@@ -12,16 +26,27 @@ An interactive clinical data exploration system for healthcare professionals to 
 ### Prerequisites
 - Node.js 18+ and npm 9+
 - ~200 MB disk space
+- Git (for cloning)
 
-### Installation & Run
+### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/VaraprasadSamanthula/CLARA.git
+cd CLARA
+
 # Install dependencies
 npm install
 
-# Start development server
-npm run dev
+# (Optional) Set up environment variables
+cp .env.example .env.local  # Create local environment file if needed
+```
 
+### Running Locally
+
+**Development Mode:**
+```bash
+npm run dev
 # Visit http://localhost:3000
 ```
 
@@ -29,294 +54,329 @@ npm run dev
 ```bash
 npm run build
 npm start
+# Visit http://localhost:3000
 ```
 
 ---
 
-## Demo Access
+## Demo Credentials
 
-**Credentials:**
+**Pre-configured Demo Account:**
 - Email: `doctor@hospital.com`
 - Password: `demo123`
 
-**Demo Patient:** 100 patients from MIMIC-IV clinical database
+This account provides access to 100 synthetic MIMIC-IV patients for testing and evaluation.
 
 ---
 
 ## Key Features
 
-✅ **Natural Language Chatbot** - Query medical data conversationally  
-✅ **Patient Management** - Search and view patient profiles with full clinical history  
-✅ **Document Management** - Upload, preview, and download clinical documents  
-✅ **Clinical Data** - Access admissions, diagnoses, medications, lab results  
-✅ **Secure Authentication** - Server-side session management with HttpOnly cookies  
-✅ **End-to-End Integrated** - Complete application tested and verified  
+✅ **Patient Management**
+- Search patients by ID, phone number, or name
+- View complete patient profiles with demographics and clinical history
+- Register new patients (manual entry)
+- Bulk import patients via CSV or Excel
+
+✅ **Clinical Data Exploration**
+- View patient admissions, diagnoses, medications, and lab results
+- Access longitudinal clinical records
+- Document upload and management (PDF, PNG, JPG)
+- Download clinical documents
+
+✅ **Natural Language Interface**
+- Query patient data using conversational language
+- Pattern-based SQL query generation
+- Support for common clinical queries (demographics, diagnoses, medications, etc.)
+
+✅ **Gemini Integration**
+- Optional AI-powered response generation for patient-specific questions
+- Markdown-formatted clinical summaries
+- Integration with Google's Gemini API (requires user-provided API key)
+
+✅ **Professional UI/UX**
+- Modern, responsive design with sidebar navigation
+- Consistent design system across all pages
+- Accessible form validation and error handling
+- Clean, intuitive interface suitable for healthcare professionals
 
 ---
 
 ## Technology Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | Next.js 14+, React, Tailwind CSS |
-| **Backend** | Next.js API Routes, Node.js |
-| **Database** | SQLite3 (database/clara.db) |
-| **Authentication** | Session-based with HttpOnly cookies |
-| **Storage** | Local file system (private/) |
+| Component | Technology |
+|-----------|-----------|
+| **Frontend** | Next.js 14+, React 18, CSS variables (custom design system) |
+| **Backend** | Node.js, Next.js API Routes |
+| **Database** | SQLite3 (better-sqlite3) |
+| **Authentication** | Session-based (HttpOnly cookies) |
+| **UI Framework** | Custom CSS design system (no Tailwind) |
+| **Icons** | Lucide-react |
+| **AI Integration** | Google Gemini API (optional) |
 
 ---
 
 ## Project Structure
 
 ```
-medical-sql-chatbot_0/
-├── src/                 # Next.js application
-│   ├── app/            # Pages and API routes
-│   ├── components/     # React components
-│   └── lib/            # Utilities
-├── backend/            # Backend utilities
-│   └── database/       # Database connection
-├── database/           # SQLite file (clara.db)
-├── private/            # Document storage
-├── public/             # Static assets
-├── tests/              # Verification scripts
-└── docs/               # Documentation
+CLARA/
+├── src/
+│   ├── app/                    # Next.js app directory
+│   │   ├── api/               # Backend API routes
+│   │   ├── dashboard/         # Main dashboard page
+│   │   ├── login/             # Authentication page
+│   │   ├── patients/          # Patient management pages
+│   │   ├── globals.css        # Design system (CSS variables)
+│   │   └── layout.js          # Root layout
+│   ├── components/            # React components
+│   │   ├── AppLayout.js       # Sidebar navigation layout
+│   │   ├── PatientSearch.js   # Patient search component
+│   │   ├── PatientProfile.js  # Patient clinical profile
+│   │   ├── PatientChat.js     # Patient-specific chat
+│   │   ├── DocumentManager.js # Document upload/download
+│   │   └── MarkdownRenderer.js # Chat message formatting
+│   └── providers/             # React context providers
+│       └── ChatStateProvider.js # Chat history state
+├── backend/                    # Backend utilities
+│   └── database/              # Database connection and queries
+├── database/
+│   └── clara.db              # SQLite database (not tracked in Git)
+├── middleware.ts              # Route protection middleware
+├── package.json              # Dependencies
+├── tsconfig.json             # TypeScript configuration
+└── README.md                 # This file
 ```
 
 ---
 
-## Documentation
+## System Architecture
 
-**For Complete Technical Reference:**
-→ See **[FINAL_PROJECT_GUIDE.md](FINAL_PROJECT_GUIDE.md)**
+### Authentication Flow
+1. User logs in with email/password at `/login`
+2. Backend validates credentials (demo: hardcoded demo account)
+3. Server creates session token and returns as HttpOnly cookie
+4. Middleware validates cookie on protected routes
+5. API endpoints validate session in database before processing
 
-This comprehensive guide includes:
-- System architecture and data flow
-- Database schema and relationships
-- API endpoint documentation
-- Chatbot implementation details
-- Installation and deployment instructions
-- Troubleshooting guide
-- Future enhancement suggestions
+### Patient Search
+- Users can search by patient ID, phone number, or full name
+- Searches query the MIMIC-IV database
+- Results display patient demographics and provide access to clinical records
 
----
+### Clinical Data Access
+- Patient profiles display demographics, admissions, diagnoses, medications, and lab results
+- Data retrieved from SQLite database via parameterized queries
+- Documents (PDFs, images) can be uploaded and associated with patients
 
-## Core Capabilities
-
-### Chatbot (Pattern-Based SQL)
-- Query patient counts and demographics
-- Retrieve patient ID lists (all, male, female)
-- Get gender breakdowns and statistics
-- Query admissions and clinical history
-- Search medications and lab results
-- Analyze ICU stays
-
-### Patient Management
-- Search patients by ID
-- View complete patient profiles
-- Access clinical history and admissions
-- Review diagnoses and prescriptions
-- Browse laboratory results
-
-### Document Management
-- Upload clinical documents (PDF, PNG, JPG)
-- Preview documents in application
-- Download documents
-- Organize by patient
-- Secure private storage
-
-### Security
-- User authentication and session management
-- Protected API endpoints
-- HttpOnly cookie storage
-- Session validation on all requests
-- Secure document storage
-
----
-
-## Important Limitations
-
-⚠️ **This is a demonstration/evaluation project:**
-- Pattern-based chatbot (not AI/LLM)
-- Demo authentication (not production-grade)
-- Single-file SQLite (not production database)
-- Demo dataset (100 patients only)
-- NOT HIPAA-compliant
-- NOT suitable for production healthcare deployment
-
----
-
-## Verification
-
-**Database Integrity:**
-```bash
-node tests/phase10-database-investigation.js
-```
-
-**Chatbot Functionality:**
-```bash
-node tests/phase10-chatbot-test-updated.js
-```
-
-**API Verification:**
-```bash
-node tests/phase10-search-test.js
-```
-
----
-
-## Build & Deployment
-
-### Development
-```bash
-npm run dev
-```
-Server runs on `http://localhost:3000` with hot reload.
-
-### Production Build
-```bash
-npm run build  # Creates optimized .next directory
-npm start     # Starts production server
-```
-
-### Linting
-```bash
-npm run lint
-```
-
----
-
-## API Endpoints
-
-| Method | Endpoint | Protected | Purpose |
-|--------|----------|-----------|---------|
-| POST | `/api/auth/login` | ❌ | User login |
-| POST | `/api/auth/logout` | ✅ | User logout |
-| GET | `/api/patients/[id]` | ✅ | Get patient profile |
-| GET | `/api/patients/search` | ✅ | Search patient |
-| POST | `/api/chat` | ✅ | Submit chatbot query |
-| GET | `/api/documents` | ✅ | List documents |
-| POST | `/api/documents/upload` | ✅ | Upload document |
-| GET | `/api/documents/[id]` | ✅ | Get document |
-| DELETE | `/api/documents/[id]` | ✅ | Delete document |
+### Chat System
+1. **Clinical Chat (Dashboard):** Pattern-based SQL queries on patient population
+2. **Patient Chat:** AI-enhanced summaries of individual patient records (requires Gemini API key)
 
 ---
 
 ## Database
 
-**File:** `database/clara.db` (48.37 MB)
+**File:** `database/clara.db` (~48 MB)
 
 **Contents:**
-- 100 patients (MIMIC-IV sample)
-- 275 admissions
+- 100 patient records (synthetic MIMIC-IV data)
+- 275+ admissions
 - 9,000+ diagnoses
 - 36,000+ prescriptions
 - 107,000+ lab events
-- 140 ICU stays
-- Reference tables for diagnoses, lab items, medications
+- Reference tables for diagnosis codes, lab items, medications
 
-**Integrity:** ✅ PRAGMA integrity_check = "ok"
+**Database Integrity:** ✅ Verified via PRAGMA integrity_check
+
+**Important:** The database contains demo/synthetic data only and is safe for development. Do not use with real patient information.
 
 ---
 
-## Development Workflow
+## Installation and Setup
 
-### Adding a New Feature
-1. Create component or API route
-2. Test in development (`npm run dev`)
-3. Verify database integration
-4. Update tests if needed
-5. Run linter (`npm run lint`)
-6. Test production build (`npm run build`)
+### Environment Variables
 
-### Database Queries
-- All database operations through `backend/database/connection.js`
-- SQLite prepared statements with parameter binding
-- Read-only SELECT queries for safety
+Create a `.env.local` file (not tracked in Git) with:
 
-### Frontend Components
-- Located in `src/components/`
-- Use React hooks (useState, useEffect, useContext)
-- Fetch API for HTTP requests
-- Tailwind CSS for styling
+```
+# Optional: For Gemini AI integration
+# Get your API key from https://aistudio.google.com/app/apikey
+GEMINI_API_KEY=your_api_key_here
+
+# Optional: For database path customization
+DATABASE_PATH=database/clara.db
+```
+
+Note: `.env.local` is ignored by Git and should not be committed.
+
+### Gemini API Integration (Optional)
+
+The patient-specific chatbot can generate AI-powered clinical summaries using Google's Gemini API:
+
+1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Create an API key
+3. Add `GEMINI_API_KEY=your_key` to `.env.local`
+4. The chat feature will automatically use the key when available
+
+If no API key is provided, the chatbot still functions using pattern-based responses.
+
+---
+
+## Running the Application
+
+### Development
+```bash
+npm run dev
+```
+- Hot reload enabled
+- Available at http://localhost:3000
+- Use demo credentials to log in
+
+### Production
+```bash
+npm run build    # Creates optimized build in .next/
+npm start        # Starts production server
+```
+
+### Testing
+```bash
+npm run lint     # Run ESLint checks
+```
+
+---
+
+## Current Limitations
+
+### Chatbot
+- ⚠️ Uses pattern matching, not true natural language understanding
+- ⚠️ Limited query types supported (see supported patterns below)
+- ⚠️ Cannot parse free-form clinical queries outside defined patterns
+
+### Authentication
+- ⚠️ Demo credentials are hardcoded (not production-grade)
+- ⚠️ No user registration system
+- ⚠️ No multi-factor authentication
+
+### Data Management
+- ⚠️ Single-file SQLite database (not suitable for multi-user production)
+- ⚠️ No database replication or backup system
+- ⚠️ No data encryption at rest
+
+### Deployment
+- ⚠️ Not HIPAA-compliant
+- ⚠️ Not suitable for real clinical data
+- ⚠️ No audit logging for compliance
+
+### Supported Query Patterns
+
+The chatbot recognizes these query types:
+- Patient counts and demographics ("Show me all patients", "How many male patients")
+- Specific patient IDs ("Get patient 100", "Show me patient with ID 150")
+- Diagnostic queries ("Patients with hypertension", "Who has diabetes")
+- Gender filtering ("All female patients", "Male patients over 50")
+
+Queries outside these patterns return "no results" with helpful suggestions.
+
+---
+
+## Known Issues
+
+- Patient import may skip duplicate names with identical dates of birth
+- Document preview optimized for PDF format
+- Chat history persists only during session (not persistent database storage)
+- No support for custom clinical note formats
+
+---
+
+## Future Enhancements
+
+The following features are planned but not yet implemented:
+
+- **RAG Integration:** Retrieval-Augmented Generation for more sophisticated clinical query understanding
+- **Persistent Chat History:** Store chat conversations in database
+- **Advanced Analytics:** Clinical metrics and trend analysis
+- **Real-time Collaboration:** Multiple users viewing same patient record
+- **Audit Logging:** Full audit trail for compliance requirements
+- **Custom Workflows:** User-defined clinical workflows
+- **Integration APIs:** RESTful APIs for third-party applications
 
 ---
 
 ## Troubleshooting
 
-**Port Already in Use:**
+### Port Already in Use
 ```bash
-# Windows
+# Windows - Find and kill process on port 3000
 netstat -ano | findstr :3000
-taskkill /PID [PID] /F
+taskkill /PID <PID> /F
 
-# Mac/Linux
+# macOS/Linux
 lsof -ti :3000 | xargs kill -9
 ```
 
-**Dependencies Error:**
+### Build Errors
 ```bash
-npm cache clean --force
+# Clear cache and reinstall
+rm -rf node_modules .next
 npm install
-```
-
-**Database Error:**
-Verify `database/clara.db` exists and working directory is project root.
-
-**Build Error:**
-```bash
-rm -rf .next
 npm run build
 ```
 
----
+### Database Not Found
+- Ensure `database/clara.db` exists
+- Verify working directory is project root
+- Check `.gitignore` if re-cloning
 
-## Audit & Cleanup
-
-**Repository Cleanup Status:** ✅ COMPLETE
-- 55+ intermediate phase reports removed
-- Test scripts organized in `tests/` directory
-- Project root cleaned and simplified
-- See [FINAL_CLEANUP_AUDIT.md](FINAL_CLEANUP_AUDIT.md) for details
-
----
-
-## Project Status
-
-### Completion
-✅ All 10 phases complete  
-✅ All core features implemented  
-✅ All tests passing  
-✅ Production build successful  
-✅ Documentation complete  
-✅ Code reviewed and cleaned  
-
-### Verified Working
-✅ User authentication  
-✅ Patient search and profiles  
-✅ Chatbot queries  
-✅ Document management  
-✅ Database integrity  
-✅ API endpoints  
-✅ Security protections  
-
-### Limitations Documented
-- ⚠️ Pattern-based chatbot (not AI)
-- ⚠️ Demo authentication
-- ⚠️ Limited dataset
-- ⚠️ Not production-ready for healthcare
+### Chat Feature Not Working
+- Verify Gemini API key is in `.env.local`
+- Check that API key is valid at [Google AI Studio](https://aistudio.google.com/app/apikey)
+- Try without API key (pattern-based responses still available)
 
 ---
 
-## Support
+## License
 
-For detailed information, see:
-- **[FINAL_PROJECT_GUIDE.md](FINAL_PROJECT_GUIDE.md)** - Complete technical documentation
-- **[PHASE10_FINAL_STATUS.md](PHASE10_FINAL_STATUS.md)** - Final phase completion report
-- **[FINAL_CLEANUP_AUDIT.md](FINAL_CLEANUP_AUDIT.md)** - Cleanup and organization audit
+This project is provided for research and educational purposes. See LICENSE file for details.
 
 ---
 
-**Project:** CLARA Medical SQL Chatbot  
-**Version:** 0.1.0  
-**Status:** ✅ Production Ready for Evaluation
+## Citation
+
+If you use CLARA in academic work, please cite:
+
+```
+CLARA - Clinical Data Assistant
+Version 0.2.0 (2026)
+https://github.com/VaraprasadSamanthula/CLARA
+```
+
+---
+
+## Support & Feedback
+
+For issues, questions, or feedback:
+1. Check existing GitHub issues
+2. Review the troubleshooting section above
+3. Open a new GitHub issue with details
+
+---
+
+## Disclaimer
+
+**THIS IS NOT A MEDICAL DEVICE**
+
+CLARA is a research and demonstration platform. It is NOT:
+- Approved for clinical use
+- HIPAA-compliant
+- Suitable for real patient data
+- A replacement for proper EHR systems
+- Validated for medical decision-making
+
+Use only with synthetic or demonstration data in a development environment.
+
+---
+
+**Project:** CLARA - Clinical Data Assistant  
+**Version:** 0.2.0  
+**Status:** Research/Demonstration  
+**Last Updated:** November 18, 2026
+

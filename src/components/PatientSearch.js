@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { Search, AlertCircle, Loader } from 'lucide-react';
+import { Search, AlertCircle, Loader, Users } from 'lucide-react';
 
 export default function PatientSearch({ onPatientSelected }) {
   const [searchType, setSearchType] = useState('id');
@@ -46,96 +46,133 @@ export default function PatientSearch({ onPatientSelected }) {
   };
 
   return (
-    <div className="patient-search">
-      <h2 className="text-xl font-semibold mb-4 text-amber-50">Patient Search</h2>
-
-      <form onSubmit={handleSearch} className="space-y-4 mb-6">
-        {/* Search Type Selector */}
-        <div>
-          <label className="block text-sm font-medium mb-2 text-amber-50">Search Type</label>
-          <select
-            value={searchType}
-            onChange={(e) => {
-              setSearchType(e.target.value);
-              setResult(null);
-              setError(null);
-            }}
-            className="field w-full"
-          >
-            <option value="id">Patient ID</option>
-            <option value="phone" disabled title="Phone search not yet available">
-              Phone Number (Not Available)
-            </option>
-          </select>
+    <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+      <div className="card">
+        <div className="card-header">
+          <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+            <Users size={24} />
+            Patient Search
+          </h2>
+          <p className="card-subtitle">Find a patient by ID, phone number, or name</p>
         </div>
 
-        {/* Search Input */}
-        <div>
-          <label className="block text-sm font-medium mb-2 text-amber-50">
-            {searchType === 'id' ? 'Patient ID' : 'Phone Number'}
-          </label>
-          <div className="flex gap-2">
-            <input
-              type={searchType === 'id' ? 'number' : 'tel'}
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              placeholder={searchType === 'id' ? 'Enter patient ID' : 'Enter phone number'}
-              className="field flex-1"
-              disabled={loading}
-              min={searchType === 'id' ? '1' : undefined}
-            />
-            <button
-              type="submit"
-              disabled={!searchValue.trim() || loading}
-              className="primary-button px-4 py-2 flex items-center gap-2 hover:bg-opacity-90 disabled:opacity-50"
-            >
-              {loading ? <Loader size={18} className="animate-spin" /> : <Search size={18} />}
-              Search
-            </button>
-          </div>
+        <div className="card-body">
+          <form onSubmit={handleSearch} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+            {/* Search Type Selector */}
+            <div className="form-group">
+              <label className="form-label">Search By</label>
+              <select
+                value={searchType}
+                onChange={(e) => {
+                  setSearchType(e.target.value);
+                  setResult(null);
+                  setError(null);
+                }}
+                className="form-select"
+              >
+                <option value="id">Patient ID</option>
+                <option value="phone">Phone Number</option>
+                <option value="name">Patient Name</option>
+              </select>
+            </div>
+
+            {/* Search Input */}
+            <div className="form-group">
+              <label className="form-label">
+                {searchType === 'id' ? 'Patient ID' : searchType === 'phone' ? 'Phone Number' : 'Patient Name'}
+              </label>
+              <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                <input
+                  type={searchType === 'id' ? 'number' : 'text'}
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  placeholder={searchType === 'id' ? 'Enter patient ID' : searchType === 'phone' ? 'Enter phone number' : 'Enter patient name'}
+                  className="form-input"
+                  disabled={loading}
+                  min={searchType === 'id' ? '1' : undefined}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="submit"
+                  disabled={!searchValue.trim() || loading}
+                  className="btn btn-primary"
+                  style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}
+                >
+                  {loading ? <Loader size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Search size={18} />}
+                  Search
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
 
       {/* Error Message */}
       {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded mb-4">
-          <div className="flex items-start gap-2">
-            <AlertCircle size={18} className="text-red-400 flex-shrink-0 mt-0.5" />
-            <p className="text-red-400 text-sm">{error}</p>
-          </div>
+        <div style={{
+          padding: 'var(--spacing-md)',
+          background: '#fef2f2',
+          border: '1px solid var(--error)',
+          borderRadius: 'var(--radius-lg)',
+          marginTop: 'var(--spacing-lg)',
+          display: 'flex',
+          gap: 'var(--spacing-sm)',
+        }}>
+          <AlertCircle size={18} style={{ color: 'var(--error)', flexShrink: 0, marginTop: '2px' }} />
+          <p style={{ color: 'var(--error)', fontSize: '0.875rem' }}>{error}</p>
         </div>
       )}
 
       {/* Search Results */}
       {result && (
-        <div className="p-4 bg-cyan-500/10 border border-cyan-500/20 rounded mb-4">
-          <div className="space-y-2 mb-4">
-            <p className="text-amber-50">
-              <span className="font-medium">Patient ID:</span> {result.id}
-            </p>
-            <p className="text-amber-50">
-              <span className="font-medium">Gender:</span> {result.gender}
-            </p>
-            <p className="text-amber-50">
-              <span className="font-medium">Age:</span> {result.age}
-            </p>
-            {result.yearGroup && (
-              <p className="text-amber-50">
-                <span className="font-medium">Year Group:</span> {result.yearGroup}
-              </p>
-            )}
-            {result.dateOfDeath && (
-              <p className="text-amber-200">
-                <span className="font-medium">Date of Death:</span> {result.dateOfDeath}
-              </p>
-            )}
+        <div className="card" style={{ marginTop: 'var(--spacing-lg)', background: 'var(--primary-50)', borderColor: 'var(--primary-200)' }}>
+          <div className="card-header">
+            <h3 className="card-title">Patient Found</h3>
           </div>
-          <button
-            onClick={handleSelectPatient}
-            className="primary-button w-full py-2"
-          >
-            View Patient Profile
-          </button>
+          <div className="card-body">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-lg)', marginBottom: 'var(--spacing-lg)' }}>
+              <div>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', marginBottom: 'var(--spacing-xs)' }}>Patient ID</p>
+                <p style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--primary)' }}>{result.id}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', marginBottom: 'var(--spacing-xs)' }}>Gender</p>
+                <p style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>{result.gender}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', marginBottom: 'var(--spacing-xs)' }}>Age</p>
+                <p style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>{result.age} years</p>
+              </div>
+              {result.yearGroup && (
+                <div>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', marginBottom: 'var(--spacing-xs)' }}>Year Group</p>
+                  <p style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>{result.yearGroup}</p>
+                </div>
+              )}
+              {result.dateOfDeath && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', marginBottom: 'var(--spacing-xs)' }}>Status</p>
+                  <div className="badge badge-warning">Deceased: {result.dateOfDeath}</div>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={handleSelectPatient}
+              className="btn btn-primary"
+              style={{ width: '100%' }}
+            >
+              View Patient Profile
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!result && !error && !loading && (
+        <div className="empty-state" style={{ marginTop: 'var(--spacing-2xl)' }}>
+          <Users size={48} />
+          <h3>Start Searching</h3>
+          <p>Enter patient information to find and view clinical records</p>
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
-import { Upload, Download, FileText, Loader, AlertCircle, CheckCircle, Trash2, Eye, X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
+import { Upload, Download, FileText, Loader, AlertCircle, CheckCircle, Trash2, Eye, X, ZoomIn, ZoomOut } from 'lucide-react';
 
 export default function DocumentManager({ patientId, onDocumentUploaded }) {
   const [documents, setDocuments] = useState([]);
@@ -11,8 +11,6 @@ export default function DocumentManager({ patientId, onDocumentUploaded }) {
   const [previewingDoc, setPreviewingDoc] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState(null);
-  const [pdfPages, setPdfPages] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
   const [zoom, setZoom] = useState(1);
   const [deletingId, setDeletingId] = useState(null);
   const fileInputRef = useRef(null);
@@ -52,7 +50,6 @@ export default function DocumentManager({ patientId, onDocumentUploaded }) {
     if (!file) return;
 
     await uploadDocument(file);
-    // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -64,7 +61,6 @@ export default function DocumentManager({ patientId, onDocumentUploaded }) {
     setSuccess(null);
 
     try {
-      // Validate file type and size on client
       const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
       if (!allowedTypes.includes(file.type)) {
         setError('File type not allowed. Allowed: PDF, JPEG, PNG');
@@ -72,18 +68,16 @@ export default function DocumentManager({ patientId, onDocumentUploaded }) {
         return;
       }
 
-      const maxSize = 50 * 1024 * 1024; // 50MB
+      const maxSize = 50 * 1024 * 1024;
       if (file.size > maxSize) {
         setError('File too large. Maximum: 50MB');
         setUploading(false);
         return;
       }
 
-      // Prepare multipart form data
       const formData = new FormData();
       formData.append('file', file);
 
-      // Upload to patient-specific endpoint
       const response = await fetch(`/api/patients/${patientId}/documents/upload`, {
         method: 'POST',
         body: formData,
@@ -99,16 +93,12 @@ export default function DocumentManager({ patientId, onDocumentUploaded }) {
       }
 
       setSuccess(`Document uploaded: ${file.name}`);
-      
-      // Refresh document list
       await fetchDocuments();
       
-      // Call parent callback if provided
       if (onDocumentUploaded) {
         onDocumentUploaded();
       }
 
-      // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err.message || 'Upload failed');
@@ -121,7 +111,6 @@ export default function DocumentManager({ patientId, onDocumentUploaded }) {
     setPreviewingDoc(doc);
     setPreviewLoading(true);
     setPreviewError(null);
-    setCurrentPage(1);
     setZoom(1);
 
     try {
@@ -132,13 +121,6 @@ export default function DocumentManager({ patientId, onDocumentUploaded }) {
       if (!response.ok) {
         setPreviewError('Failed to load document');
         return;
-      }
-
-      // Document loaded successfully - for PDFs, the browser will handle it
-      if (doc.type === 'application/pdf') {
-        // PDF will be displayed in embed, no additional action needed
-      } else if (doc.type.startsWith('image/')) {
-        // Image will be displayed directly
       }
     } catch (err) {
       setPreviewError(err.message || 'Failed to load document');
@@ -218,78 +200,76 @@ export default function DocumentManager({ patientId, onDocumentUploaded }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2xl)' }}>
       {/* Preview Modal */}
       {previewingDoc && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-lg max-w-4xl w-full max-h-[90vh] flex flex-col">
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 'var(--spacing-lg)' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '900px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             {/* Preview Header */}
-            <div className="flex justify-between items-center p-4 border-b border-gray-700">
-              <h3 className="text-lg font-semibold text-cyan-300 truncate">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--spacing-lg)', borderBottom: '1px solid var(--border)' }}>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {previewingDoc.filename}
               </h3>
               <button
                 onClick={() => setPreviewingDoc(null)}
-                className="p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: 'var(--spacing-md)' }}
               >
                 <X size={20} />
               </button>
             </div>
 
             {/* Preview Content */}
-            <div className="flex-1 overflow-auto bg-gray-950">
+            <div style={{ flex: 1, overflowY: 'auto', background: 'var(--background)' }}>
               {previewLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <Loader className="animate-spin mx-auto mb-2 text-cyan-400" />
-                    <p className="text-amber-200">Loading document...</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <Loader size={32} style={{ margin: '0 auto var(--spacing-md)', color: 'var(--primary)', animation: 'spin 1s linear infinite' }} />
+                    <p style={{ color: 'var(--text-secondary)' }}>Loading document...</p>
                   </div>
                 </div>
               ) : previewError ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <AlertCircle className="mx-auto mb-2 text-red-400" size={32} />
-                    <p className="text-red-400">{previewError}</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <AlertCircle size={32} style={{ margin: '0 auto var(--spacing-md)', color: 'var(--error)' }} />
+                    <p style={{ color: 'var(--error)' }}>{previewError}</p>
                   </div>
                 </div>
               ) : previewingDoc.type === 'application/pdf' ? (
                 <iframe
                   src={`/api/documents/preview/${previewingDoc.id}`}
-                  className="w-full h-full"
-                  style={{ minHeight: '500px' }}
+                  style={{ width: '100%', height: '100%', minHeight: '500px', border: 'none' }}
                 />
               ) : previewingDoc.type.startsWith('image/') ? (
-                <div className="flex items-center justify-center h-full p-4">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 'var(--spacing-lg)' }}>
                   <img
                     src={`/api/documents/preview/${previewingDoc.id}`}
                     alt={previewingDoc.filename}
-                    className="max-w-full max-h-full"
-                    style={{ transform: `scale(${zoom})` }}
+                    style={{ maxWidth: '100%', maxHeight: '100%', transform: `scale(${zoom})` }}
                   />
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-amber-200">Preview not available for this file type</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                  <p style={{ color: 'var(--text-secondary)' }}>Preview not available for this file type</p>
                 </div>
               )}
             </div>
 
             {/* Preview Footer */}
-            <div className="border-t border-gray-700 p-4 flex justify-between items-center">
-              <div className="flex gap-2">
+            <div style={{ borderTop: '1px solid var(--border)', padding: 'var(--spacing-lg)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
                 {previewingDoc.type.startsWith('image/') && (
                   <>
                     <button
                       onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
-                      className="p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: 'var(--spacing-md)' }}
                       title="Zoom out"
                     >
                       <ZoomOut size={18} />
                     </button>
-                    <span className="px-3 py-2 text-sm text-gray-400">{Math.round(zoom * 100)}%</span>
+                    <span style={{ padding: 'var(--spacing-md)', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{Math.round(zoom * 100)}%</span>
                     <button
                       onClick={() => setZoom(Math.min(3, zoom + 0.1))}
-                      className="p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: 'var(--spacing-md)' }}
                       title="Zoom in"
                     >
                       <ZoomIn size={18} />
@@ -299,7 +279,8 @@ export default function DocumentManager({ patientId, onDocumentUploaded }) {
               </div>
               <button
                 onClick={() => handleDownload(previewingDoc.id, previewingDoc.filename)}
-                className="flex items-center gap-2 px-4 py-2 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 rounded transition"
+                className="btn btn-primary"
+                style={{ fontSize: '0.875rem' }}
               >
                 <Download size={16} />
                 Download
@@ -310,12 +291,19 @@ export default function DocumentManager({ patientId, onDocumentUploaded }) {
       )}
 
       {/* Upload Section */}
-      <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-cyan-300">Upload Document</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+        <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>Upload Document</h3>
         
         <div
           onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-cyan-500/30 rounded-lg p-8 text-center cursor-pointer hover:border-cyan-500/60 hover:bg-cyan-500/5 transition"
+          style={{
+            border: '2px dashed var(--border)',
+            borderRadius: 'var(--radius-lg)',
+            padding: 'var(--spacing-2xl)',
+            textAlign: 'center',
+            cursor: 'pointer',
+            transition: 'all 200ms ease'
+          }}
         >
           <input
             ref={fileInputRef}
@@ -323,20 +311,20 @@ export default function DocumentManager({ patientId, onDocumentUploaded }) {
             onChange={handleFileSelect}
             accept=".pdf,.jpg,.jpeg,.png"
             disabled={uploading}
-            className="hidden"
+            style={{ display: 'none' }}
           />
           
-          <div className="flex flex-col items-center gap-2">
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--spacing-md)' }}>
             {uploading ? (
               <>
-                <Loader size={32} className="text-cyan-400 animate-spin" />
-                <p className="text-amber-200">Uploading...</p>
+                <Loader size={32} style={{ color: 'var(--primary)', animation: 'spin 1s linear infinite' }} />
+                <p style={{ color: 'var(--text-secondary)' }}>Uploading...</p>
               </>
             ) : (
               <>
-                <Upload size={32} className="text-cyan-400" />
-                <p className="text-amber-50 font-medium">Click to upload or drag and drop</p>
-                <p className="text-sm text-amber-200">PDF, JPEG, PNG (max 50MB)</p>
+                <Upload size={32} style={{ color: 'var(--primary)' }} />
+                <p style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Click to upload or drag and drop</p>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>PDF, JPEG, PNG (max 50MB)</p>
               </>
             )}
           </div>
@@ -344,56 +332,74 @@ export default function DocumentManager({ patientId, onDocumentUploaded }) {
 
         {/* Messages */}
         {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded">
-            <div className="flex items-start gap-2">
-              <AlertCircle size={18} className="text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-red-400 text-sm">{error}</p>
-            </div>
+          <div style={{
+            padding: 'var(--spacing-md)',
+            background: '#fef2f2',
+            border: '1px solid #fecaca',
+            borderRadius: 'var(--radius-lg)',
+            display: 'flex',
+            gap: 'var(--spacing-md)',
+            alignItems: 'flex-start'
+          }}>
+            <AlertCircle size={18} style={{ color: 'var(--error)', flexShrink: 0, marginTop: '2px' }} />
+            <p style={{ color: 'var(--error)', fontSize: '0.875rem' }}>{error}</p>
           </div>
         )}
 
         {success && (
-          <div className="p-3 bg-green-500/10 border border-green-500/30 rounded">
-            <div className="flex items-start gap-2">
-              <CheckCircle size={18} className="text-green-400 flex-shrink-0 mt-0.5" />
-              <p className="text-green-400 text-sm">{success}</p>
-            </div>
+          <div style={{
+            padding: 'var(--spacing-md)',
+            background: '#ecfdf5',
+            border: '1px solid #a7f3d0',
+            borderRadius: 'var(--radius-lg)',
+            display: 'flex',
+            gap: 'var(--spacing-md)',
+            alignItems: 'flex-start'
+          }}>
+            <CheckCircle size={18} style={{ color: 'var(--success)', flexShrink: 0, marginTop: '2px' }} />
+            <p style={{ color: '#065f46', fontSize: '0.875rem' }}>{success}</p>
           </div>
         )}
       </div>
 
       {/* Documents List */}
-      <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-cyan-300">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+        <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
           Documents ({documents.length})
         </h3>
 
         {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="flex flex-col items-center gap-2">
-              <Loader size={24} className="text-cyan-400 animate-spin" />
-              <p className="text-amber-200 text-sm">Loading documents...</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 'var(--spacing-2xl)', paddingBottom: 'var(--spacing-2xl)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+              <Loader size={24} style={{ color: 'var(--primary)', animation: 'spin 1s linear infinite' }} />
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Loading documents...</p>
             </div>
           </div>
         ) : documents.length === 0 ? (
-          <p className="text-amber-300 text-center py-8">No documents uploaded yet.</p>
+          <p style={{ color: 'var(--text-secondary)', textAlign: 'center', paddingTop: 'var(--spacing-2xl)', paddingBottom: 'var(--spacing-2xl)' }}>No documents uploaded yet.</p>
         ) : (
-          <div className="space-y-2 max-h-96 overflow-y-auto">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)', maxHeight: '400px', overflowY: 'auto' }}>
             {documents.map((doc) => (
               <div
                 key={doc.id}
-                className="p-4 bg-amber-950/30 rounded border border-amber-700/20 hover:border-amber-600/40 transition"
+                style={{
+                  padding: 'var(--spacing-lg)',
+                  background: 'var(--background-secondary)',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--border)',
+                  transition: 'all 200ms ease'
+                }}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xl flex-shrink-0">{getFileIcon(doc.type)}</span>
-                      <p className="text-amber-50 font-medium truncate">{doc.filename}</p>
-                      <span className="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-1 rounded flex-shrink-0">
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--spacing-lg)' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-xs)' }}>
+                      <span style={{ fontSize: '1.25rem', flexShrink: 0 }}>{getFileIcon(doc.type)}</span>
+                      <p style={{ color: 'var(--text-primary)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.filename}</p>
+                      <span style={{ fontSize: '0.75rem', background: 'var(--primary-50)', color: 'var(--primary)', padding: 'var(--spacing-xs) var(--spacing-md)', borderRadius: 'var(--radius-md)', flexShrink: 0 }}>
                         {getFileTypeLabel(doc.type)}
                       </span>
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-amber-200">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-lg)', fontSize: '0.875rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
                       <span>{doc.sizeFormatted}</span>
                       {doc.uploadedAt && (
                         <span>
@@ -407,31 +413,34 @@ export default function DocumentManager({ patientId, onDocumentUploaded }) {
                       {doc.uploadedBy && <span>by {doc.uploadedBy}</span>}
                     </div>
                   </div>
-                  <div className="flex gap-2 flex-shrink-0">
+                  <div style={{ display: 'flex', gap: 'var(--spacing-md)', flexShrink: 0 }}>
                     <button
                       onClick={() => handlePreview(doc)}
                       disabled={previewLoading}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 rounded text-sm transition disabled:opacity-50"
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.75rem', padding: 'var(--spacing-sm) var(--spacing-md)' }}
                     >
-                      <Eye size={16} />
+                      <Eye size={14} />
                       Preview
                     </button>
                     <button
                       onClick={() => handleDownload(doc.id, doc.filename)}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 rounded text-sm transition"
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.75rem', padding: 'var(--spacing-sm) var(--spacing-md)' }}
                     >
-                      <Download size={16} />
+                      <Download size={14} />
                       Download
                     </button>
                     <button
                       onClick={() => handleDelete(doc.id)}
                       disabled={deletingId === doc.id}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-red-600/20 hover:bg-red-600/40 text-red-300 rounded text-sm transition disabled:opacity-50"
+                      className="btn btn-danger"
+                      style={{ fontSize: '0.75rem', padding: 'var(--spacing-sm) var(--spacing-md)' }}
                     >
                       {deletingId === doc.id ? (
-                        <Loader size={16} className="animate-spin" />
+                        <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} />
                       ) : (
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
                       )}
                       Delete
                     </button>

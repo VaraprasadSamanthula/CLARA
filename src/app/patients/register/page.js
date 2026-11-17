@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Users, AlertCircle, CheckCircle, AlertTriangle, ArrowLeft } from 'lucide-react';
+import AppLayout from '@/components/AppLayout';
 
 export default function RegisterPatientPage() {
   const router = useRouter();
@@ -105,92 +107,155 @@ export default function RegisterPatientPage() {
     }
   };
 
+  const handleClear = () => {
+    setFormData({ full_name: '', date_of_birth: '', gender: '', phone: '', email: '', address: '' });
+    setError('');
+    setSuccess('');
+    setDuplicateWarning('');
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Patient Management</h1>
-          <p className="text-gray-600">Register new patients and manage patient information</p>
+    <AppLayout>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: 'var(--spacing-lg)', gap: 'var(--spacing-lg)', overflow: 'auto' }}>
+        {/* Header */}
+        <div>
+          <button 
+            onClick={() => router.push('/dashboard')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', marginBottom: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}
+          >
+            <ArrowLeft size={18} />
+            Back to Dashboard
+          </button>
+          <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: 'var(--spacing-md)', color: 'var(--text-primary)' }}>Patient Management</h1>
+          <p style={{ color: 'var(--text-secondary)' }}>Register new patients and manage patient information</p>
         </div>
 
-        <div className="flex gap-2 mb-8 border-b border-gray-300">
-          <a href="/patients/register" className="px-4 py-3 font-medium text-blue-600 border-b-2 border-blue-600 hover:bg-blue-50">
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: 'var(--spacing-md)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--spacing-md)', flexWrap: 'wrap' }}>
+          <a href="/patients/register" style={{ padding: 'var(--spacing-md)', fontWeight: 500, fontSize: '0.875rem', color: 'var(--primary)', borderBottom: '2px solid var(--primary)', textDecoration: 'none', marginBottom: '-1px' }}>
             Manual Registration
           </a>
-          <a href="/patients/import" className="px-4 py-3 font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50">
+          <a href="/patients/import" style={{ padding: 'var(--spacing-md)', fontWeight: 500, fontSize: '0.875rem', color: 'var(--text-secondary)', borderBottom: '2px solid transparent', textDecoration: 'none', transition: 'all 200ms ease', marginBottom: '-1px' }}>
             Bulk Import (CSV/Excel)
-          </a>
-          <a href="/patients/search" className="px-4 py-3 font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50">
-            Search Patients
           </a>
         </div>
 
-        <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold mb-6 text-gray-800">Register New Patient</h2>
-
-          {error && <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">{error}</div>}
-          {duplicateWarning && <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded">⚠ {duplicateWarning}</div>}
-          {success && <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">{success}</div>}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 mb-1">
-                Patient Name <span className="text-red-500">*</span>
-              </label>
-              <input type="text" id="full_name" name="full_name" value={formData.full_name} onChange={handleChange} placeholder="John Doe" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" required disabled={loading} />
+        {/* Form Container */}
+        <div style={{ maxWidth: '600px', margin: '0 auto', width: '100%' }}>
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">Register New Patient</h2>
+              <p className="card-subtitle">Enter patient information to create a new record</p>
             </div>
 
-            <div>
-              <label htmlFor="date_of_birth" className="block text-sm font-medium text-gray-700 mb-1">Date of Birth (YYYY-MM-DD)</label>
-              <input type="date" id="date_of_birth" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled={loading} />
-            </div>
+            {error && (
+              <div style={{
+                marginBottom: 'var(--spacing-lg)',
+                padding: 'var(--spacing-md)',
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: 'var(--radius-lg)',
+                display: 'flex',
+                gap: 'var(--spacing-md)',
+                alignItems: 'flex-start'
+              }}>
+                <AlertCircle size={18} style={{ color: 'var(--error)', flexShrink: 0, marginTop: '2px' }} />
+                <p style={{ color: 'var(--error)', fontSize: '0.875rem' }}>{error}</p>
+              </div>
+            )}
+            
+            {duplicateWarning && (
+              <div style={{
+                marginBottom: 'var(--spacing-lg)',
+                padding: 'var(--spacing-md)',
+                background: '#fffbeb',
+                border: '1px solid #fde68a',
+                borderRadius: 'var(--radius-lg)',
+                display: 'flex',
+                gap: 'var(--spacing-md)',
+                alignItems: 'flex-start'
+              }}>
+                <AlertTriangle size={18} style={{ color: 'var(--warning)', flexShrink: 0, marginTop: '2px' }} />
+                <p style={{ color: '#92400e', fontSize: '0.875rem' }}>{duplicateWarning}</p>
+              </div>
+            )}
+            
+            {success && (
+              <div style={{
+                marginBottom: 'var(--spacing-lg)',
+                padding: 'var(--spacing-md)',
+                background: '#ecfdf5',
+                border: '1px solid #a7f3d0',
+                borderRadius: 'var(--radius-lg)',
+                display: 'flex',
+                gap: 'var(--spacing-md)',
+                alignItems: 'flex-start'
+              }}>
+                <CheckCircle size={18} style={{ color: 'var(--success)', flexShrink: 0, marginTop: '2px' }} />
+                <p style={{ color: '#065f46', fontSize: '0.875rem' }}>{success}</p>
+              </div>
+            )}
 
-            <div>
-              <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
-              <select id="gender" name="gender" value={formData.gender} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled={loading}>
-                <option value="">Select Gender</option>
-                <option value="M">Male</option>
-                <option value="F">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+              <div className="form-group">
+                <label className="form-label">Patient Name <span style={{ color: 'var(--error)' }}>*</span></label>
+                <input type="text" name="full_name" value={formData.full_name} onChange={handleChange} placeholder="John Doe" className="form-input" required disabled={loading} />
+              </div>
 
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-              <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} placeholder="(555) 123-4567" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled={loading} />
-            </div>
+              <div className="form-group">
+                <label className="form-label">Date of Birth</label>
+                <input type="date" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} className="form-input" disabled={loading} />
+                <p className="form-hint">Format: YYYY-MM-DD (helps prevent duplicates)</p>
+              </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-              <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} placeholder="patient@example.com" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled={loading} />
-            </div>
+              <div className="form-group">
+                <label className="form-label">Gender</label>
+                <select name="gender" value={formData.gender} onChange={handleChange} className="form-select" disabled={loading}>
+                  <option value="">Select Gender</option>
+                  <option value="M">Male</option>
+                  <option value="F">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
 
-            <div>
-              <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-              <textarea id="address" name="address" value={formData.address} onChange={handleChange} placeholder="123 Main St, Anytown, ST 12345" rows="3" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled={loading}></textarea>
-            </div>
+              <div className="form-group">
+                <label className="form-label">Phone Number</label>
+                <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="(555) 123-4567" className="form-input" disabled={loading} />
+              </div>
 
-            <div className="flex gap-3 pt-4">
-              <button type="submit" disabled={loading} className={`flex-1 px-4 py-2 rounded-md font-medium transition-colors ${loading ? 'bg-gray-400 text-gray-700 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
-                {loading ? 'Registering...' : 'Register Patient'}
-              </button>
-              <button type="button" disabled={loading} onClick={() => { setFormData({ full_name: '', date_of_birth: '', gender: '', phone: '', email: '', address: '' }); setError(''); setSuccess(''); setDuplicateWarning(''); }} className={`px-4 py-2 border rounded-md font-medium transition-colors ${loading ? 'border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}>
-                Clear
-              </button>
-            </div>
-          </form>
+              <div className="form-group">
+                <label className="form-label">Email Address</label>
+                <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="patient@example.com" className="form-input" disabled={loading} />
+              </div>
 
-          <div className="mt-6 p-4 bg-blue-50 rounded-md border border-blue-200">
-            <h3 className="font-semibold text-gray-800 mb-2">About Patient Registration</h3>
-            <ul className="text-sm text-gray-700 space-y-1">
-              <li>• Patient name is required; all other fields are optional</li>
-              <li>• Date of birth helps prevent duplicate registrations</li>
-              <li>• Each patient receives a unique ID for document uploads</li>
-              <li>• You can import multiple patients via CSV/Excel in Phase 2</li>
+              <div className="form-group">
+                <label className="form-label">Address</label>
+                <textarea name="address" value={formData.address} onChange={handleChange} placeholder="123 Main St, Anytown, ST 12345" rows="3" className="form-textarea" disabled={loading}></textarea>
+              </div>
+
+              <div style={{ display: 'flex', gap: 'var(--spacing-md)', paddingTop: 'var(--spacing-lg)' }}>
+                <button type="submit" disabled={loading} className="btn btn-primary" style={{ flex: 1 }}>
+                  {loading ? 'Registering...' : 'Register Patient'}
+                </button>
+                <button type="button" disabled={loading} onClick={handleClear} className="btn btn-secondary" style={{ flex: 1 }}>
+                  Clear
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Info Card */}
+          <div style={{ marginTop: 'var(--spacing-2xl)', padding: 'var(--spacing-lg)', background: 'var(--primary-50)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--primary-200)' }}>
+            <h3 style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--spacing-sm)' }}>About Patient Registration</h3>
+            <ul style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', paddingLeft: 'var(--spacing-lg)', margin: 0 }}>
+              <li style={{ marginBottom: 'var(--spacing-xs)' }}>Patient name is required; all other fields are optional</li>
+              <li style={{ marginBottom: 'var(--spacing-xs)' }}>Date of birth helps prevent duplicate registrations</li>
+              <li style={{ marginBottom: 'var(--spacing-xs)' }}>Each patient receives a unique ID for document uploads</li>
+              <li>You can import multiple patients via CSV/Excel</li>
             </ul>
           </div>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }

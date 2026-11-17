@@ -109,8 +109,8 @@ export async function GET(request) {
       params = [patientId];
     } else if (searchType === 'phone') {
       // Search by phone number
-      // Note: Phone field does not exist in current schema
-      // This endpoint is prepared for future use when phone field is added
+      // First try new patient registry (most likely to have phone)
+      // Then fall back to searching MIMIC patients
       const normalizedPhone = normalizePhoneNumber(searchValue);
       if (!normalizedPhone) {
         return new Response(
@@ -123,26 +123,59 @@ export async function GET(request) {
         );
       }
 
-      // Check if phone field exists in patients table
+      // Search in patient_registry first (new patients)
       query = `
         SELECT 
-          subject_id,
+          patient_id,
+          patient_source as source,
           gender,
-          anchor_age,
-          anchor_year,
-          anchor_year_group,
-          dod,
-          created_at
-        FROM patients
-        WHERE phone_number = ?
+          NULL as age,
+          NULL as anchor_year,
+          NULL as anchor_year_group,
+          NULL as dod,
+          created_at,
+          full_name,
+          date_of_birth
+        FROM patient_registry
+        WHERE phone = ?
       `;
       params = [normalizedPhone];
+    } else if (searchType === 'name') {
+      // Search by full name (patient_registry only)
+      if (!searchValue || searchValue.trim().length < 2) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Invalid name',
+            hint: 'Name must be at least 2 characters'
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      query = `
+        SELECT 
+          patient_id,
+          patient_source as source,
+          gender,
+          NULL as age,
+          NULL as anchor_year,
+          NULL as anchor_year_group,
+          NULL as dod,
+          created_at,
+          full_name,
+          date_of_birth
+        FROM patient_registry
+        WHERE LOWER(full_name) LIKE LOWER(?)
+        LIMIT 1
+      `;
+      params = [`%${searchValue.trim()}%`];
     } else {
       return new Response(
         JSON.stringify({
           success: false,
           error: 'Invalid search type',
-          hint: 'Use type=id or type=phone'
+          hint: 'Use type=id, type=phone, or type=name'
         }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
@@ -152,18 +185,6 @@ export async function GET(request) {
     const result = runQuery(query, params);
 
     if (!result.success) {
-      // If phone field doesn't exist, provide helpful message
-      if (searchType === 'phone' && result.error?.includes('no such column')) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'Phone search not yet available',
-            hint: 'Search by patient ID instead. Phone field has not been configured.'
-          }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
       return new Response(
         JSON.stringify({
           success: false,

@@ -1,4 +1,5 @@
 import './globals.css'
+import { ChatStateProvider } from '@/providers/ChatStateProvider'
 
 export const metadata = {
   title: 'CLARA | Clinical data assistant',
@@ -9,7 +10,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="h-screen overflow-hidden">
-        {children}
+        <ChatStateProvider>
+          {children}
+        </ChatStateProvider>
       </body>
     </html>
   )

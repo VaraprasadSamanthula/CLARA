@@ -174,6 +174,11 @@ function getDb() {
   return db;
 }
 
+/**
+ * Export getDb for use by route handlers
+ */
+export { getDb };
+
 export function getSchema() {
   return `
     CLARA Database Schema - Complete Reference

@@ -3,16 +3,7 @@
  * Patient-specific chatbot with longitudinal clinical history
  */
 
-import { verifyAuth, initializeDb } from '../../../../backend/database/connection.js';
-import { createRequire } from 'module';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const require = createRequire(import.meta.url);
-const Database = require('better-sqlite3');
-const __filename = fileURLToPath(import.meta.url);
-const projectRoot = path.join(__filename, '../../../../../../');
-const dbPath = path.join(projectRoot, 'database', 'clara.db');
+import { verifyAuth, initializeDb, getDb } from '../../../../backend/database/connection.js';
 
 async function callGeminiAPI(clinicalDataStr, question, apiKey) {
   if (!apiKey) {
@@ -25,42 +16,107 @@ async function callGeminiAPI(clinicalDataStr, question, apiKey) {
   }
 
   try {
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + apiKey, {
+    // Use gemini-3.5-flash-lite (currently supported model)
+    const model = 'gemini-3.5-flash-lite';
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{
+          role: 'user',
           parts: [{
-            text: `You are a clinical summarization assistant. Generate a comprehensive patient-specific summary based on the clinical data and question.\n\nCLINICAL DATA:\n${clinicalDataStr}\n\nDOCTOR'S QUESTION:\n${question}\n\nRequirements: Be specific to this patient, include dates and values, highlight changes across admissions, do not invent information.`
+            text: `You are a clinical data assistant helping clinicians understand their patient's medical history.
+
+PATIENT CLINICAL DATA:
+${clinicalDataStr}
+
+DOCTOR'S QUESTION:
+${question}
+
+RESPONSE GUIDELINES:
+1. Answer the question directly and specifically for this patient.
+2. Use ONLY the clinical data provided above—do not invent information.
+3. Include specific dates, values, lab results, and medication names from the records.
+4. Use markdown formatting for readability:
+   - Use **bold** for important findings or abnormal values
+   - Use bullet points (-) to list diagnoses, medications, or lab results
+   - Use headings (## Admission 1) to organize information chronologically
+   - Use code blocks (\`\`\`) for structured data like lab tables
+5. When organizing data:
+   - Arrange admissions chronologically from earliest to latest
+   - Group medications and lab results by admission when relevant
+   - Highlight trends (improving/worsening) if multiple admissions exist
+6. If specific information is unavailable, state "No data available for [specific item]"
+7. For new CLARA patients with no history, explain the patient registration status
+8. Use professional medical terminology but explain findings clearly
+9. Do not diagnose, recommend treatments, or provide medical advice—only summarize data
+10. Keep responses concise but complete; aim for 150-500 words depending on data volume`
           }]
         }],
         generationConfig: {
           temperature: 0.3,
-          maxOutputTokens: 1024
-        }
+          maxOutputTokens: 2048,
+          topP: 0.95,
+          topK: 40
+        },
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_NONE'
+          },
+          {
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_NONE'
+          },
+          {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_NONE'
+          },
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_NONE'
+          }
+        ]
       })
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[GEMINI] API Error:', response.status, errorText.substring(0, 200));
       throw new Error(`Gemini API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Unable to generate response';
+    const responseText = await response.text();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('[GEMINI] JSON Parse Error');
+      throw new Error(`Failed to parse Gemini response`);
+    }
+    
+    const answer = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!answer) {
+      throw new Error('No response content from Gemini');
+    }
 
     return {
       success: true,
       source: 'gemini',
-      answer: answer
+      answer: answer,
+      model: model
     };
   } catch (error) {
-    console.error('[GEMINI] Error:', error);
+    console.error('[GEMINI] Error:', error.message);
     return {
       success: true,
       source: 'sql',
       answer: clinicalDataStr,
       error: error.message,
-      note: 'LLM generation failed. Returning structured clinical summary instead.'
+      note: 'Natural-language generation unavailable. Returning structured clinical summary instead.'
     };
   }
 }
@@ -85,6 +141,7 @@ export async function POST(request) {
       );
     }
 
+    // Initialize database
     const dbInitialized = initializeDb();
     if (!dbInitialized) {
       return new Response(
@@ -93,10 +150,17 @@ export async function POST(request) {
       );
     }
 
-    const db = new Database(dbPath);
-    db.pragma('foreign_keys = ON');
+    // Get database connection
+    const db = getDb();
+    if (!db) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Database not available' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     try {
+      db.pragma('foreign_keys = ON');
       const patientNum = parseInt(patientId);
       const isMimic = patientNum >= 10000000;
 
@@ -164,10 +228,13 @@ export async function POST(request) {
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
 
-    } finally {
-      db.close();
+    } catch (error) {
+      console.error('[PATIENT_CHAT] Error:', error);
+      return new Response(
+        JSON.stringify({ success: false, error: error.message || 'Server error' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
     }
-
   } catch (error) {
     console.error('[PATIENT_CHAT] Error:', error);
     return new Response(

@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Download, AlertCircle, CheckCircle, AlertTriangle, ArrowLeft } from 'lucide-react';
+import AppLayout from '@/components/AppLayout';
 
 export default function ImportPatientPage() {
   const router = useRouter();
@@ -100,7 +102,7 @@ export default function ImportPatientPage() {
       setPreviewing(false);
 
       setTimeout(() => {
-        router.push('/patients/search');
+        router.push('/dashboard');
       }, 2000);
 
     } catch (err) {
@@ -119,20 +121,12 @@ export default function ImportPatientPage() {
         return;
       }
 
-      // Get the file content
       const blob = await response.blob();
       
-      // Determine filename and MIME type
-      let filename, mimeType;
-      if (format === 'csv') {
-        filename = 'CLARA_Patient_Import_Template.csv';
-        mimeType = 'text/csv';
-      } else {
-        filename = 'CLARA_Patient_Import_Template.xlsx';
-        mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-      }
+      let filename = format === 'csv' 
+        ? 'CLARA_Patient_Import_Template.csv'
+        : 'CLARA_Patient_Import_Template.xlsx';
 
-      // Create download link
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -160,11 +154,9 @@ export default function ImportPatientPage() {
         return;
       }
 
-      // Get the CSV content
       const blob = await response.blob();
       const filename = `CLARA_Import_Errors_${previewId.substring(0, 8)}.csv`;
 
-      // Create download link
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -181,198 +173,245 @@ export default function ImportPatientPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Patient Management</h1>
-          <p className="text-gray-600">Register new patients and manage patient information</p>
+    <AppLayout>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: 'var(--spacing-lg)', gap: 'var(--spacing-lg)', overflow: 'auto' }}>
+        {/* Header */}
+        <div>
+          <button 
+            onClick={() => router.push('/dashboard')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', marginBottom: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}
+          >
+            <ArrowLeft size={18} />
+            Back to Dashboard
+          </button>
+          <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: 'var(--spacing-md)', color: 'var(--text-primary)' }}>Patient Management</h1>
+          <p style={{ color: 'var(--text-secondary)' }}>Register new patients and manage patient information</p>
         </div>
 
-        <div className="flex gap-2 mb-8 border-b border-gray-300">
-          <a href="/patients/register" className="px-4 py-3 font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50">
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: 'var(--spacing-md)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--spacing-md)', flexWrap: 'wrap' }}>
+          <a href="/patients/register" style={{ padding: 'var(--spacing-md)', fontWeight: 500, fontSize: '0.875rem', color: 'var(--text-secondary)', borderBottom: '2px solid transparent', textDecoration: 'none', transition: 'all 200ms ease', marginBottom: '-1px' }}>
             Manual Registration
           </a>
-          <a href="/patients/import" className="px-4 py-3 font-medium text-blue-600 border-b-2 border-blue-600 hover:bg-blue-50">
+          <a href="/patients/import" style={{ padding: 'var(--spacing-md)', fontWeight: 500, fontSize: '0.875rem', color: 'var(--primary)', borderBottom: '2px solid var(--primary)', textDecoration: 'none', marginBottom: '-1px' }}>
             Bulk Import (CSV/Excel)
-          </a>
-          <a href="/patients/search" className="px-4 py-3 font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50">
-            Search Patients
           </a>
         </div>
 
-        <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold mb-6 text-gray-800">Bulk Patient Import</h2>
+        {/* Form Container */}
+        <div style={{ maxWidth: '600px', margin: '0 auto', width: '100%' }}>
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">Bulk Patient Import</h2>
+              <p className="card-subtitle">Upload CSV or Excel file to import multiple patients</p>
+            </div>
 
-          {error && <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">{error}</div>}
-          {success && <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">{success}</div>}
-
-          {!previewing ? (
-            <div className="space-y-6">
-              {/* Template Download */}
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded">
-                <h3 className="font-semibold text-gray-800 mb-3">Step 1: Download Template</h3>
-                <p className="text-sm text-gray-600 mb-3">Download a template to ensure your file has the correct format</p>
-                <div className="flex gap-2">
-                  <button onClick={() => downloadTemplate('csv')} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                    Download CSV Template
-                  </button>
-                  <button onClick={() => downloadTemplate('xlsx')} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                    Download Excel Template
-                  </button>
-                </div>
+            {error && (
+              <div style={{
+                marginBottom: 'var(--spacing-lg)',
+                padding: 'var(--spacing-md)',
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: 'var(--radius-lg)',
+                display: 'flex',
+                gap: 'var(--spacing-md)',
+                alignItems: 'flex-start'
+              }}>
+                <AlertCircle size={18} style={{ color: 'var(--error)', flexShrink: 0, marginTop: '2px' }} />
+                <p style={{ color: 'var(--error)', fontSize: '0.875rem' }}>{error}</p>
               </div>
+            )}
+            
+            {success && (
+              <div style={{
+                marginBottom: 'var(--spacing-lg)',
+                padding: 'var(--spacing-md)',
+                background: '#ecfdf5',
+                border: '1px solid #a7f3d0',
+                borderRadius: 'var(--radius-lg)',
+                display: 'flex',
+                gap: 'var(--spacing-md)',
+                alignItems: 'flex-start'
+              }}>
+                <CheckCircle size={18} style={{ color: 'var(--success)', flexShrink: 0, marginTop: '2px' }} />
+                <p style={{ color: '#065f46', fontSize: '0.875rem' }}>{success}</p>
+              </div>
+            )}
 
-              {/* File Selection */}
-              <div className="p-4 bg-gray-50 border border-gray-300 rounded">
-                <h3 className="font-semibold text-gray-800 mb-3">Step 2: Select File</h3>
-                <div className="border-2 border-dashed border-gray-400 rounded p-6 text-center">
-                  <input
-                    type="file"
-                    accept=".csv,.xlsx"
-                    onChange={handleFileSelect}
-                    disabled={uploading}
-                    className="hidden"
-                    id="file-input"
-                  />
-                  <label htmlFor="file-input" className="block cursor-pointer">
-                    <p className="text-gray-600 mb-2">
-                      {file ? `✓ ${file.name} (${(file.size / 1024).toFixed(0)} KB)` : 'Drag and drop or click to select CSV/Excel file'}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => document.getElementById('file-input').click()}
-                      className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-                    >
-                      Choose File
+            {!previewing ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+                {/* Template Download */}
+                <div style={{ padding: 'var(--spacing-lg)', background: 'var(--primary-50)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--primary-200)' }}>
+                  <h3 style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--spacing-sm)' }}>Step 1: Download Template</h3>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: 'var(--spacing-md)' }}>Download a template to ensure your file has the correct format</p>
+                  <div style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap' }}>
+                    <button onClick={() => downloadTemplate('csv')} className="btn btn-primary" style={{ fontSize: '0.875rem' }}>
+                      <Download size={16} />
+                      CSV Template
                     </button>
-                  </label>
+                    <button onClick={() => downloadTemplate('xlsx')} className="btn btn-primary" style={{ fontSize: '0.875rem' }}>
+                      <Download size={16} />
+                      Excel Template
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              {/* Preview */}
-              <div>
+                {/* File Selection */}
+                <div style={{ padding: 'var(--spacing-lg)', background: 'var(--background-secondary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
+                  <h3 style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--spacing-sm)' }}>Step 2: Select File</h3>
+                  <div style={{ border: '2px dashed var(--border)', borderRadius: 'var(--radius-lg)', padding: 'var(--spacing-2xl)', textAlign: 'center', cursor: 'pointer', transition: 'all 200ms ease' }}>
+                    <input
+                      type="file"
+                      accept=".csv,.xlsx"
+                      onChange={handleFileSelect}
+                      disabled={uploading}
+                      style={{ display: 'none' }}
+                      id="file-input"
+                    />
+                    <label htmlFor="file-input" style={{ display: 'block', cursor: 'pointer' }}>
+                      <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-md)' }}>
+                        {file ? `✓ ${file.name} (${(file.size / 1024).toFixed(0)} KB)` : 'Drag and drop or click to select CSV/Excel file'}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('file-input').click()}
+                        className="btn btn-secondary"
+                        style={{ fontSize: '0.875rem' }}
+                      >
+                        Choose File
+                      </button>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Preview Button */}
                 <button
                   onClick={handlePreview}
                   disabled={!file || uploading}
-                  className={`w-full px-4 py-3 rounded-md font-medium transition-colors ${
-                    uploading || !file
-                      ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
+                  className="btn btn-primary"
+                  style={{ width: '100%' }}
                 >
                   {uploading ? 'Processing...' : 'Step 3: Preview Import'}
                 </button>
               </div>
-            </div>
-          ) : (
-            // Preview Results
-            <div className="space-y-4">
-              <h3 className="font-semibold text-gray-800 text-lg">Import Preview</h3>
+            ) : (
+              // Preview Results
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+                <h3 style={{ fontWeight: 600, fontSize: '1.125rem', color: 'var(--text-primary)' }}>Import Preview</h3>
 
-              {preview && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-4 gap-4">
-                    <div className="p-4 bg-green-50 border border-green-200 rounded">
-                      <div className="text-3xl font-bold text-green-600">{preview.valid_rows}</div>
-                      <div className="text-sm text-gray-600">Valid Rows</div>
+                {preview && (
+                  <>
+                    {/* Stats Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--spacing-md)' }}>
+                      <div style={{ padding: 'var(--spacing-lg)', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.875rem', fontWeight: 700, color: 'var(--success)', marginBottom: 'var(--spacing-xs)' }}>{preview.valid_rows}</div>
+                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Valid Rows</div>
+                      </div>
+                      <div style={{ padding: 'var(--spacing-lg)', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.875rem', fontWeight: 700, color: 'var(--warning)', marginBottom: 'var(--spacing-xs)' }}>{preview.duplicate_rows}</div>
+                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Duplicates</div>
+                      </div>
+                      <div style={{ padding: 'var(--spacing-lg)', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.875rem', fontWeight: 700, color: 'var(--error)', marginBottom: 'var(--spacing-xs)' }}>{preview.invalid_rows}</div>
+                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Invalid</div>
+                      </div>
+                      <div style={{ padding: 'var(--spacing-lg)', background: 'var(--primary-50)', border: '1px solid var(--primary-200)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.875rem', fontWeight: 700, color: 'var(--primary)', marginBottom: 'var(--spacing-xs)' }}>{preview.total_rows}</div>
+                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Total</div>
+                      </div>
                     </div>
-                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
-                      <div className="text-3xl font-bold text-yellow-600">{preview.duplicate_rows}</div>
-                      <div className="text-sm text-gray-600">Duplicates</div>
-                    </div>
-                    <div className="p-4 bg-red-50 border border-red-200 rounded">
-                      <div className="text-3xl font-bold text-red-600">{preview.invalid_rows}</div>
-                      <div className="text-sm text-gray-600">Invalid</div>
-                    </div>
-                    <div className="p-4 bg-blue-50 border border-blue-200 rounded">
-                      <div className="text-3xl font-bold text-blue-600">{preview.total_rows}</div>
-                      <div className="text-sm text-gray-600">Total</div>
-                    </div>
-                  </div>
 
-                  {/* Sample Rows */}
-                  {preview.rows && preview.rows.length > 0 && (
-                    <div className="overflow-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="bg-gray-200">
-                            <th className="px-3 py-2 text-left">Row</th>
-                            <th className="px-3 py-2 text-left">Name</th>
-                            <th className="px-3 py-2 text-left">DOB</th>
-                            <th className="px-3 py-2 text-left">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {preview.rows.slice(0, 10).map((row, idx) => (
-                            <tr key={idx} className={row.status === 'VALID' ? 'bg-green-50' : row.status === 'INVALID' ? 'bg-red-50' : 'bg-yellow-50'}>
-                              <td className="px-3 py-2">{row.rowIndex}</td>
-                              <td className="px-3 py-2">{row.data.full_name}</td>
-                              <td className="px-3 py-2">{row.data.date_of_birth}</td>
-                              <td className="px-3 py-2 font-semibold">{row.status}</td>
+                    {/* Sample Rows Table */}
+                    {preview.rows && preview.rows.length > 0 && (
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', fontSize: '0.875rem', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr style={{ background: 'var(--background-secondary)', borderBottom: '1px solid var(--border)' }}>
+                              <th style={{ padding: 'var(--spacing-md)', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Row</th>
+                              <th style={{ padding: 'var(--spacing-md)', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Name</th>
+                              <th style={{ padding: 'var(--spacing-md)', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>DOB</th>
+                              <th style={{ padding: 'var(--spacing-md)', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Status</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="space-y-3 pt-4">
-                    <div className="flex gap-3">
-                      <button
-                        onClick={handleConfirmImport}
-                        disabled={importing || preview.valid_rows === 0}
-                        className={`flex-1 px-4 py-3 rounded-md font-medium transition-colors ${
-                          importing || preview.valid_rows === 0
-                            ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
-                            : 'bg-green-600 text-white hover:bg-green-700'
-                        }`}
-                      >
-                        {importing ? 'Importing...' : `Import ${preview.valid_rows} Valid Rows`}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setPreviewing(false);
-                          setPreview(null);
-                          setPreviewId(null);
-                        }}
-                        disabled={importing}
-                        className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100"
-                      >
-                        Back
-                      </button>
-                    </div>
-                    
-                    {(preview.invalid_rows > 0 || preview.duplicate_rows > 0) && (
-                      <button
-                        onClick={() => downloadErrorReport()}
-                        disabled={importing}
-                        className="w-full px-4 py-2 border border-orange-300 text-orange-700 rounded-md hover:bg-orange-50 text-sm font-medium"
-                      >
-                        📥 Download Error Report ({preview.invalid_rows + preview.duplicate_rows} issues)
-                      </button>
+                          </thead>
+                          <tbody>
+                            {preview.rows.slice(0, 10).map((row, idx) => {
+                              let rowBg = 'white';
+                              if (row.status === 'VALID') rowBg = '#ecfdf5';
+                              else if (row.status === 'INVALID') rowBg = '#fef2f2';
+                              else rowBg = '#fffbeb';
+                              
+                              return (
+                                <tr key={idx} style={{ background: rowBg, borderBottom: '1px solid var(--border)' }}>
+                                  <td style={{ padding: 'var(--spacing-md)', color: 'var(--text-primary)' }}>{row.rowIndex}</td>
+                                  <td style={{ padding: 'var(--spacing-md)', color: 'var(--text-primary)' }}>{row.data.full_name}</td>
+                                  <td style={{ padding: 'var(--spacing-md)', color: 'var(--text-primary)' }}>{row.data.date_of_birth}</td>
+                                  <td style={{ padding: 'var(--spacing-md)', fontWeight: 600, color: row.status === 'VALID' ? 'var(--success)' : row.status === 'INVALID' ? 'var(--error)' : 'var(--warning)' }}>{row.status}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
                     )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
-          {/* Information */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-md border border-blue-200">
-            <h3 className="font-semibold text-gray-800 mb-2">Import Guidelines</h3>
-            <ul className="text-sm text-gray-700 space-y-1">
-              <li>• Supported formats: CSV and Excel (XLSX)</li>
-              <li>• Maximum file size: 5 MB</li>
-              <li>• Required field: full_name</li>
-              <li>• Optional fields: date_of_birth, gender, phone, email, address</li>
-              <li>• Duplicates (same name + DOB) will be skipped</li>
-              <li>• All rows are validated before import</li>
-              <li>• Date format must be YYYY-MM-DD</li>
+                    {/* Action Buttons */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)', paddingTop: 'var(--spacing-lg)' }}>
+                      <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
+                        <button
+                          onClick={handleConfirmImport}
+                          disabled={importing || preview.valid_rows === 0}
+                          className="btn btn-success"
+                          style={{ flex: 1 }}
+                        >
+                          {importing ? 'Importing...' : `Import ${preview.valid_rows} Valid Rows`}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setPreviewing(false);
+                            setPreview(null);
+                            setPreviewId(null);
+                          }}
+                          disabled={importing}
+                          className="btn btn-secondary"
+                          style={{ flex: 1 }}
+                        >
+                          Back
+                        </button>
+                      </div>
+                      
+                      {(preview.invalid_rows > 0 || preview.duplicate_rows > 0) && (
+                        <button
+                          onClick={() => downloadErrorReport()}
+                          disabled={importing}
+                          className="btn btn-outline"
+                          style={{ width: '100%' }}
+                        >
+                          <Download size={16} />
+                          Download Error Report ({preview.invalid_rows + preview.duplicate_rows} issues)
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Guidelines Card */}
+          <div style={{ marginTop: 'var(--spacing-2xl)', padding: 'var(--spacing-lg)', background: 'var(--primary-50)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--primary-200)' }}>
+            <h3 style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--spacing-sm)' }}>Import Guidelines</h3>
+            <ul style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', paddingLeft: 'var(--spacing-lg)', margin: 0 }}>
+              <li style={{ marginBottom: 'var(--spacing-xs)' }}>Supported formats: CSV and Excel (XLSX)</li>
+              <li style={{ marginBottom: 'var(--spacing-xs)' }}>Maximum file size: 5 MB</li>
+              <li style={{ marginBottom: 'var(--spacing-xs)' }}>Required field: full_name</li>
+              <li style={{ marginBottom: 'var(--spacing-xs)' }}>Optional fields: date_of_birth, gender, phone, email, address</li>
+              <li style={{ marginBottom: 'var(--spacing-xs)' }}>Duplicates (same name + DOB) will be skipped</li>
+              <li style={{ marginBottom: 'var(--spacing-xs)' }}>All rows are validated before import</li>
+              <li>Date format must be YYYY-MM-DD</li>
             </ul>
           </div>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }
