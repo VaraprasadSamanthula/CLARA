@@ -50,6 +50,7 @@ export default function ImportPatientPage() {
 
       const response = await fetch('/api/patients/import/preview', {
         method: 'POST',
+        credentials: 'include',
         body: formData
       });
 
@@ -83,6 +84,7 @@ export default function ImportPatientPage() {
       const response = await fetch('/api/patients/import/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ preview_id: previewId, skip_duplicates: true })
       });
 

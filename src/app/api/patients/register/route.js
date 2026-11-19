@@ -22,16 +22,7 @@
  * }
  */
 
-import { verifyAuth, initializeDb } from '@/backend/database/connection.js';
-import { createRequire } from 'module';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const require = createRequire(import.meta.url);
-const Database = require('better-sqlite3');
-const __filename = fileURLToPath(import.meta.url);
-const projectRoot = path.join(__filename, '../../../../');
-const dbPath = path.join(projectRoot, 'database', 'clara.db');
+import { verifyAuth, initializeDb, getDb } from '@/backend/database/connection.js';
 
 export async function POST(request) {
   try {
@@ -89,79 +80,79 @@ export async function POST(request) {
       );
     }
 
-    // Connect to database
-    const db = new Database(dbPath);
-    db.pragma('foreign_keys = ON');
+    // Get database connection from shared pool
+    const db = getDb();
+    if (!db) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Database not available' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
-    try {
-      // Check for potential duplicates (concurrency-safe: atomic transaction)
-      const duplicate = db.prepare(`
-        SELECT patient_id, created_at 
-        FROM patient_registry
-        WHERE full_name = ? AND date_of_birth = ?
-      `).get(full_name.trim(), date_of_birth || null);
+    // Check for potential duplicates (concurrency-safe: atomic transaction)
+    const duplicate = db.prepare(`
+      SELECT patient_id, created_at 
+      FROM patient_registry
+      WHERE full_name = ? AND date_of_birth = ?
+    `).get(full_name.trim(), date_of_birth || null);
 
-      if (duplicate) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'A patient with this name and date of birth already exists',
-            existing_patient_id: duplicate.patient_id,
-            existing_created_at: duplicate.created_at
-          }),
-          { status: 409, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Insert new patient into registry within a transaction
-      const transaction = db.transaction((data) => {
-        return db.prepare(`
-          INSERT INTO patient_registry (
-            patient_source,
-            full_name,
-            date_of_birth,
-            gender,
-            phone,
-            email,
-            address,
-            created_by
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
-          'MANUAL',
-          data.full_name,
-          data.date_of_birth,
-          data.gender,
-          data.phone,
-          data.email,
-          data.address,
-          data.created_by
-        );
-      });
-
-      const result = transaction({
-        full_name: full_name.trim(),
-        date_of_birth: date_of_birth || null,
-        gender: gender || null,
-        phone: phone || null,
-        email: email || null,
-        address: address || null,
-        created_by: session.email || 'unknown'
-      });
-
-      const patientId = result.lastInsertRowid;
-
+    if (duplicate) {
       return new Response(
         JSON.stringify({
-          success: true,
-          patient_id: patientId,
-          message: `Patient registered successfully with ID: ${patientId}`
+          success: false,
+          error: 'A patient with this name and date of birth already exists',
+          existing_patient_id: duplicate.patient_id,
+          existing_created_at: duplicate.created_at
         }),
-        { status: 201, headers: { 'Content-Type': 'application/json' } }
+        { status: 409, headers: { 'Content-Type': 'application/json' } }
       );
-
-    } finally {
-      db.close();
     }
+
+    // Insert new patient into registry within a transaction
+    const transaction = db.transaction((data) => {
+      return db.prepare(`
+        INSERT INTO patient_registry (
+          patient_source,
+          full_name,
+          date_of_birth,
+          gender,
+          phone,
+          email,
+          address,
+          created_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        'MANUAL',
+        data.full_name,
+        data.date_of_birth,
+        data.gender,
+        data.phone,
+        data.email,
+        data.address,
+        data.created_by
+      );
+    });
+
+    const result = transaction({
+      full_name: full_name.trim(),
+      date_of_birth: date_of_birth || null,
+      gender: gender || null,
+      phone: phone || null,
+      email: email || null,
+      address: address || null,
+      created_by: session.email || 'unknown'
+    });
+
+    const patientId = result.lastInsertRowid;
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        patient_id: patientId,
+        message: `Patient registered successfully with ID: ${patientId}`
+      }),
+      { status: 201, headers: { 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('[REGISTER_API] Error:', error);

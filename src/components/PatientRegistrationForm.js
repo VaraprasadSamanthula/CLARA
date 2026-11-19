@@ -58,6 +58,7 @@ export default function AddPatientForm() {
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           full_name: formData.full_name.trim(),
           date_of_birth: formData.date_of_birth || null,

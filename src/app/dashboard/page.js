@@ -1,38 +1,43 @@
 "use client";
-import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import AppLayout from '../../components/AppLayout';
-import { Send, Settings, MessageSquare, Search, User, MessageCircle } from 'lucide-react';
+import { Send, MessageSquare, Search, User, MessageCircle, FileText } from 'lucide-react';
 import PatientSearch from '../../components/PatientSearch';
 import PatientProfile from '../../components/PatientProfile';
 import PatientChat from '../../components/PatientChat';
+import DocumentManager from '../../components/DocumentManager';
+import { ThemeProvider, useTheme } from '@/providers/ThemeProvider';
 
-export default function Dashboard() {
+// Separate component that uses useSearchParams
+function DashboardContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const tabParam = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState(tabParam || 'chat'); // 'chat', 'search', 'profile', 'patient-chat'
+  const [activeTab, setActiveTab] = useState(tabParam || 'chat');
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [apiKey, setApiKey] = useState('');
-  const [showSettings, setShowSettings] = useState(false);
-  const [tempApiKey, setTempApiKey] = useState('');
   const [selectedPatient, setSelectedPatient] = useState(null);
   const inputRef = useRef(null);
 
+  // Update activeTab when URL changes
   useEffect(() => {
-    const savedApiKey = localStorage.getItem('gemini_key');
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
-      setTempApiKey(savedApiKey);
+    if (tabParam) {
+      setActiveTab(tabParam);
     }
-  }, []);
+  }, [tabParam]);
 
-  const handleSaveApiKey = () => {
-    if (tempApiKey.trim()) {
-      localStorage.setItem('gemini_key', tempApiKey);
-      setApiKey(tempApiKey);
-      setShowSettings(false);
+  // Update URL when tab changes
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    if (newTab === 'search') {
+      router.push('/dashboard?tab=search');
+    } else if (newTab === 'chat') {
+      router.push('/dashboard?tab=chat');
+    } else {
+      // For patient-specific tabs, don't change URL
+      setActiveTab(newTab);
     }
   };
 
@@ -85,7 +90,7 @@ export default function Dashboard() {
           <div style={{ display: 'flex', gap: 'var(--spacing-md)', flex: 1 }}>
             <button
               onClick={() => {
-                setActiveTab('chat');
+                handleTabChange('chat');
                 setSelectedPatient(null);
               }}
               className={`tab-button ${activeTab === 'chat' ? 'active' : ''}`}
@@ -101,7 +106,7 @@ export default function Dashboard() {
               Clinical Chat
             </button>
             <button
-              onClick={() => setActiveTab('search')}
+              onClick={() => handleTabChange('search')}
               className={`tab-button ${activeTab === 'search' ? 'active' : ''}`}
               style={{
                 color: activeTab === 'search' ? 'var(--primary)' : 'var(--text-secondary)',
@@ -144,62 +149,24 @@ export default function Dashboard() {
                   <MessageCircle size={18} />
                   Patient Chat
                 </button>
+                <button
+                  onClick={() => setActiveTab('documents')}
+                  className={`tab-button ${activeTab === 'documents' ? 'active' : ''}`}
+                  style={{
+                    color: activeTab === 'documents' ? 'var(--primary)' : 'var(--text-secondary)',
+                    borderBottomColor: activeTab === 'documents' ? 'var(--primary)' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--spacing-sm)',
+                  }}
+                >
+                  <FileText size={18} />
+                  Documents
+                </button>
               </>
             )}
           </div>
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--text-secondary)',
-              padding: 'var(--spacing-sm)',
-              borderRadius: 'var(--radius-lg)',
-              transition: 'all 200ms ease',
-            }}
-            onMouseEnter={(e) => e.target.style.background = 'var(--surface-secondary)'}
-            onMouseLeave={(e) => e.target.style.background = 'none'}
-          >
-            <Settings size={20} />
-          </button>
         </div>
-
-        {/* Settings Panel */}
-        {showSettings && (
-          <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
-            <div>
-              <label className="form-label">Gemini API Key</label>
-              <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                <input
-                  type="password"
-                  value={tempApiKey}
-                  onChange={(e) => setTempApiKey(e.target.value)}
-                  placeholder="Paste your Gemini API key"
-                  className="form-input"
-                  style={{ flex: 1 }}
-                />
-                <button
-                  onClick={handleSaveApiKey}
-                  className="btn btn-primary"
-                >
-                  Save
-                </button>
-              </div>
-              <p className="form-hint" style={{ marginTop: 'var(--spacing-md)' }}>
-                Get your free key at{' '}
-                <a
-                  href="https://aistudio.google.com/app/apikey"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: 'var(--primary)', textDecoration: 'none' }}
-                >
-                  aistudio.google.com
-                </a>
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Chat Tab */}
         {activeTab === 'chat' && (
@@ -210,90 +177,110 @@ export default function Dashboard() {
               flexDirection: 'column',
               overflow: 'hidden',
               gap: 'var(--spacing-lg)',
+              maxWidth: '1000px',
+              margin: '0 auto',
+              width: '100%'
             }}>
-              <div className="card" style={{
+              <div style={{
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
                 overflowY: 'auto',
+                background: 'var(--surface)',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--border)',
+                padding: 'var(--spacing-xl)',
               }}>
                 {messages.length === 0 ? (
                   <div className="empty-state">
-                    <div style={{ fontSize: '2.5rem', marginBottom: 'var(--spacing-lg)' }}>💬</div>
-                    <h3>Start a Conversation</h3>
-                    <p style={{ marginTop: 'var(--spacing-sm)', maxWidth: '400px' }}>
-                      Ask CLARA about patients, clinical data, vitals, medications, or diagnoses. For example: "Show me all patients over 50 with hypertension"
+                    <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-lg)' }}>💬</div>
+                    <h3 style={{ fontSize: '22px', marginBottom: 'var(--spacing-md)' }}>Start a Conversation</h3>
+                    <p style={{ marginTop: 'var(--spacing-sm)', maxWidth: '500px', fontSize: '16px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+                      Ask CLARA about patients, clinical data, vitals, medications, or diagnoses. For example: "Show me all patients over 50"
                     </p>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
                     {messages.map((msg, idx) => (
                       <div
                         key={idx}
-                        className="message-bubble"
                         style={{
-                          ...(msg.role === 'user' ? {
-                            marginLeft: 'auto',
-                            maxWidth: '75%',
-                            background: 'var(--primary)',
-                            color: 'white',
-                            border: 'none',
-                          } : {
-                            marginRight: 'auto',
-                            maxWidth: '75%',
-                          })
+                          display: 'flex',
+                          justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                          marginBottom: idx < messages.length - 1 ? 'var(--spacing-md)' : 0
                         }}
                       >
-                        <p style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: 'var(--spacing-sm)', opacity: 0.8 }}>
-                          {msg.role === 'user' ? 'You' : 'CLARA'}
-                        </p>
-                        <p style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{msg.content}</p>
+                        <div
+                          style={{
+                            maxWidth: '70%',
+                            padding: 'var(--spacing-lg)',
+                            borderRadius: 'var(--radius-lg)',
+                            background: msg.role === 'user' ? 'var(--primary)' : 'var(--background-secondary)',
+                            color: msg.role === 'user' ? 'white' : 'var(--text-primary)',
+                            border: msg.role === 'user' ? 'none' : '1px solid var(--border)',
+                            fontSize: '16px',
+                            lineHeight: 1.7,
+                            wordBreak: 'break-word',
+                            whiteSpace: 'pre-wrap'
+                          }}
+                        >
+                          {msg.content}
+                        </div>
                       </div>
                     ))}
                     {loading && (
-                      <div className="message-bubble" style={{ marginRight: 'auto', maxWidth: '75%' }}>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: 'var(--spacing-sm)' }}>CLARA</p>
-                        <p>Thinking...</p>
+                      <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                        <div style={{
+                          padding: 'var(--spacing-lg)',
+                          borderRadius: 'var(--radius-lg)',
+                          background: 'var(--background-secondary)',
+                          color: 'var(--text-secondary)',
+                          border: '1px solid var(--border)',
+                          fontSize: '16px'
+                        }}>
+                          CLARA is thinking...
+                        </div>
                       </div>
                     )}
                   </div>
                 )}
               </div>
 
-              {/* Input Form */}
-              <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+              {/* Input Form - Fixed at Bottom */}
+              <form onSubmit={handleSubmit} style={{ 
+                display: 'flex', 
+                gap: 'var(--spacing-md)',
+                background: 'var(--surface)',
+                padding: 'var(--spacing-lg)',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--border)',
+              }}>
                 <input
                   ref={inputRef}
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask about patients, vitals, medications..."
+                  placeholder="Ask about medications, labs, diagnoses, admissions..."
                   className="form-input"
-                  disabled={loading || !apiKey}
-                  style={{ flex: 1 }}
+                  disabled={loading}
+                  style={{ 
+                    flex: 1,
+                    fontSize: '16px',
+                    padding: 'var(--spacing-md) var(--spacing-lg)'
+                  }}
                 />
                 <button
                   type="submit"
-                  disabled={loading || !apiKey}
+                  disabled={loading}
                   className="btn btn-primary"
-                  style={{ padding: 'var(--spacing-md) var(--spacing-lg)' }}
+                  style={{ 
+                    padding: 'var(--spacing-md) var(--spacing-xl)',
+                    fontSize: '16px'
+                  }}
                 >
                   <Send size={20} />
                 </button>
               </form>
-
-              {!apiKey && (
-                <div style={{
-                  padding: 'var(--spacing-md)',
-                  background: '#fef2f2',
-                  border: '1px solid var(--error)',
-                  borderRadius: 'var(--radius-lg)',
-                  color: 'var(--error)',
-                  fontSize: '0.875rem',
-                }}>
-                  ⚠️ Please enter your Gemini API key in settings to use the clinical chat feature.
-                </div>
-              )}
             </div>
           </>
         )}
@@ -323,7 +310,23 @@ export default function Dashboard() {
             onBack={() => setActiveTab('profile')}
           />
         )}
+
+        {/* Documents Tab */}
+        {activeTab === 'documents' && selectedPatient && (
+          <DocumentManager
+            patientId={selectedPatient}
+            onDocumentUploaded={() => {}}
+          />
+        )}
       </div>
     </AppLayout>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>}>
+      <DashboardContent />
+    </Suspense>
   );
 }

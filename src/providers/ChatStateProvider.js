@@ -16,6 +16,25 @@ export function ChatStateProvider({ children }) {
   const [chatHistories, setChatHistories] = useState({});
   const [isInitialized, setIsInitialized] = useState(false);
 
+  // Helper function to normalize timestamps
+  const normalizeTimestamp = (timestamp) => {
+    if (!timestamp) {
+      return new Date();
+    }
+    if (timestamp instanceof Date) {
+      return timestamp;
+    }
+    if (typeof timestamp === 'string') {
+      const parsed = new Date(timestamp);
+      return isNaN(parsed.getTime()) ? new Date() : parsed;
+    }
+    if (typeof timestamp === 'number') {
+      const parsed = new Date(timestamp);
+      return isNaN(parsed.getTime()) ? new Date() : parsed;
+    }
+    return new Date();
+  };
+
   // Restore histories from sessionStorage on mount
   useEffect(() => {
     try {
@@ -28,7 +47,13 @@ export function ChatStateProvider({ children }) {
           const saved = sessionStorage.getItem(key);
           if (saved) {
             try {
-              restoredHistories[patientId] = JSON.parse(saved);
+              const parsed = JSON.parse(saved);
+              // Normalize timestamps in restored messages
+              const normalized = parsed.map(msg => ({
+                ...msg,
+                timestamp: normalizeTimestamp(msg.timestamp)
+              }));
+              restoredHistories[patientId] = normalized;
             } catch (e) {
               console.error(`Failed to parse chat history for patient ${patientId}:`, e);
             }

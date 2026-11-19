@@ -291,6 +291,28 @@ export async function GET(request, { params }) {
           records: icuStays
         }
       };
+    } else {
+      // For CLARA patients, fetch from CLARA tables
+      const claraMeds = runQuery(
+        'SELECT * FROM clara_medications WHERE patient_id = ? ORDER BY start_date DESC',
+        [patientId]
+      );
+      
+      const claraDiags = runQuery(
+        'SELECT * FROM clara_diagnoses WHERE patient_id = ? ORDER BY diagnosis_date DESC',
+        [patientId]
+      );
+
+      clinical = {
+        medications: {
+          count: claraMeds.success ? claraMeds.data.length : 0,
+          records: claraMeds.success ? claraMeds.data : []
+        },
+        diagnoses: {
+          count: claraDiags.success ? claraDiags.data.length : 0,
+          records: claraDiags.success ? claraDiags.data : []
+        }
+      };
     }
 
     return new Response(

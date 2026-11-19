@@ -1,17 +1,102 @@
 "use client";
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Menu, LogOut, Settings, User, BarChart3, Users, FileText, MessageSquare, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { Menu, LogOut, User, BarChart3, Users, FileText, MessageSquare, Plus, Moon, Sun } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function AppLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+  const [theme, setTheme] = useState('light');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  
+  useEffect(() => {
+    setMounted(true);
+    // Get theme from localStorage on client
+    const savedTheme = localStorage.getItem('clara-theme') || 'light';
+    setTheme(savedTheme);
+  }, []);
+  
+  const handleToggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('clara-theme', newTheme);
+    applyTheme(newTheme);
+  };
+  
+  const applyTheme = (newTheme) => {
+    const root = document.documentElement;
+    
+    if (newTheme === 'dark') {
+      root.setAttribute('data-theme', 'dark');
+      root.style.setProperty('--primary', '#0d7377');
+      root.style.setProperty('--primary-light', '#14919b');
+      root.style.setProperty('--primary-dark', '#0a5a60');
+      root.style.setProperty('--primary-50', '#051f21');
+      root.style.setProperty('--primary-100', '#0a3a3f');
+      root.style.setProperty('--primary-200', '#0f5058');
+      root.style.setProperty('--primary-500', '#14919b');
+      root.style.setProperty('--primary-600', '#0d7377');
+      root.style.setProperty('--primary-700', '#0a5a60');
+      root.style.setProperty('--primary-900', '#f0f9fa');
+
+      root.style.setProperty('--secondary', '#4a7c8f');
+      root.style.setProperty('--secondary-light', '#6b9bb4');
+      
+      root.style.setProperty('--accent', '#00d9ff');
+      root.style.setProperty('--accent-dark', '#00a8cc');
+      
+      root.style.setProperty('--background', '#0f172a');
+      root.style.setProperty('--background-secondary', '#1e293b');
+      root.style.setProperty('--surface', '#1a2332');
+      root.style.setProperty('--surface-secondary', '#2d3e52');
+      
+      root.style.setProperty('--text-primary', '#f8f9fa');
+      root.style.setProperty('--text-secondary', '#cbd5e1');
+      root.style.setProperty('--text-tertiary', '#94a3b8');
+      
+      root.style.setProperty('--border', '#334155');
+      root.style.setProperty('--border-light', '#475569');
+    } else {
+      root.setAttribute('data-theme', 'light');
+      root.style.setProperty('--primary', '#0d7377');
+      root.style.setProperty('--primary-light', '#14919b');
+      root.style.setProperty('--primary-dark', '#0a5a60');
+      root.style.setProperty('--primary-50', '#f0f9fa');
+      root.style.setProperty('--primary-100', '#d4eef2');
+      root.style.setProperty('--primary-200', '#a8dde5');
+      root.style.setProperty('--primary-500', '#14919b');
+      root.style.setProperty('--primary-600', '#0d7377');
+      root.style.setProperty('--primary-700', '#0a5a60');
+      root.style.setProperty('--primary-900', '#051f21');
+
+      root.style.setProperty('--secondary', '#4a7c8f');
+      root.style.setProperty('--secondary-light', '#6b9bb4');
+      
+      root.style.setProperty('--accent', '#00d9ff');
+      root.style.setProperty('--accent-dark', '#00a8cc');
+      
+      root.style.setProperty('--background', '#f8f9fa');
+      root.style.setProperty('--background-secondary', '#eef2f5');
+      root.style.setProperty('--surface', '#ffffff');
+      root.style.setProperty('--surface-secondary', '#f5f7f9');
+      
+      root.style.setProperty('--text-primary', '#0f172a');
+      root.style.setProperty('--text-secondary', '#475569');
+      root.style.setProperty('--text-tertiary', '#94a3b8');
+      
+      root.style.setProperty('--border', '#e2e8f0');
+      root.style.setProperty('--border-light', '#f1f5f9');
+    }
+  };
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch('/api/auth/logout', { 
+        method: 'POST',
+        credentials: 'include'
+      });
     } catch (err) {
       console.error('Logout error:', err);
     }
@@ -66,7 +151,7 @@ export default function AppLayout({ children }) {
             { label: 'Dashboard', href: '/dashboard', tab: 'chat', icon: BarChart3 },
             { label: 'Patient Search', href: '/dashboard?tab=search', tab: 'search', icon: Users },
             { label: 'Chat', href: '/dashboard?tab=chat', tab: 'chat', icon: MessageSquare },
-            { label: 'Documents', href: '/dashboard?tab=chat', tab: 'chat', icon: FileText }
+            { label: 'Documents', href: '/dashboard?tab=search', tab: 'search', icon: FileText }
           ].map(({ label, href, tab, icon: Icon }) => (
             <Link key={label} href={href} style={{ textDecoration: 'none' }}>
               <div
@@ -166,8 +251,19 @@ export default function AppLayout({ children }) {
           </button>
           <div style={{ flex: 1 }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-lg)' }}>
-            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: 'var(--spacing-sm)' }}>
-              <Settings size={20} />
+            <button 
+              onClick={handleToggleTheme}
+              style={{ 
+                background: 'none', 
+                border: 'none', 
+                cursor: 'pointer', 
+                color: 'var(--text-secondary)', 
+                padding: 'var(--spacing-sm)',
+                transition: 'color 200ms ease'
+              }}
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
             </button>
             <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
               D

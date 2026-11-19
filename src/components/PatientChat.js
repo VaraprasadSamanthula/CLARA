@@ -224,7 +224,18 @@ export default function PatientChat({ patientId, onBack }) {
                 <p style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: 'var(--spacing-sm)', color: 'var(--primary)' }}>
                   {msg.role === 'user' ? 'You' : 'CLARA'}
                   {msg.source && ` (${msg.source})`}
-                  {msg.timestamp && ` • ${msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                  {msg.timestamp && (() => {
+                    try {
+                      const ts = msg.timestamp instanceof Date 
+                        ? msg.timestamp 
+                        : new Date(msg.timestamp);
+                      return isNaN(ts.getTime()) 
+                        ? '' 
+                        : ` • ${ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                    } catch (e) {
+                      return '';
+                    }
+                  })()}
                 </p>
                 {msg.role === 'user' ? (
                   <p style={{ fontSize: '0.875rem', color: msg.isError ? 'var(--error)' : 'var(--text-primary)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>

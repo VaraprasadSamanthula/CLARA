@@ -7,17 +7,8 @@
  * Returns a preview_id for later confirmation.
  */
 
-import { verifyAuth, initializeDb } from '@/backend/database/connection.js';
-import { createRequire } from 'module';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { verifyAuth, initializeDb, getDb } from '@/backend/database/connection.js';
 import { randomUUID } from 'crypto';
-
-const require = createRequire(import.meta.url);
-const Database = require('better-sqlite3');
-const __filename = fileURLToPath(import.meta.url);
-const projectRoot = path.join(__filename, '../../../../../../');
-const dbPath = path.join(projectRoot, 'database', 'clara.db');
 
 // CSV parsing function
 function parseCSV(content) {
@@ -44,9 +35,12 @@ function parseCSV(content) {
 }
 
 // Excel parsing (simplified - requires xlsx library)
-function parseExcel(buffer) {
+// This will be called only if needed, so we defer the require
+async function parseExcel(buffer) {
   let xlsx;
   try {
+    const { createRequire } = await import('module');
+    const require = createRequire(import.meta.url);
     xlsx = require('xlsx');
   } catch (e) {
     throw new Error('Excel parsing not available. Please use CSV format.');
@@ -146,6 +140,15 @@ export async function POST(request) {
       );
     }
 
+    // Get database connection
+    const db = getDb();
+    if (!db) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Database not available' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Parse multipart form data
     const formData = await request.formData();
     const file = formData.get('file');
@@ -181,7 +184,7 @@ export async function POST(request) {
     } else if (fileName.endsWith('.xlsx')) {
       fileFormat = 'xlsx';
       const buffer = await file.arrayBuffer();
-      rows = parseExcel(Buffer.from(buffer));
+      rows = await parseExcel(Buffer.from(buffer));
     } else {
       return new Response(
         JSON.stringify({ success: false, error: 'Unsupported file format. Please upload CSV or XLSX.' }),
@@ -196,104 +199,95 @@ export async function POST(request) {
       );
     }
 
-    // Connect to database
-    const db = new Database(dbPath);
-    db.pragma('foreign_keys = ON');
-
-    try {
-      // Validate each row
-      const validatedRows = rows.map((row, idx) => validatePatientRow(row, idx + 2)); // Row numbering starts at 2 (header is 1)
+    // Validate each row
+    const validatedRows = rows.map((row, idx) => validatePatientRow(row, idx + 2)); // Row numbering starts at 2 (header is 1)
+    
+    // Categorize rows
+    let validCount = 0;
+    let invalidCount = 0;
+    let duplicateCount = 0;
+    
+    const processedRows = validatedRows.map(vRow => {
+      if (!vRow.isValid) {
+        invalidCount++;
+        return { ...vRow, status: 'INVALID' };
+      }
       
-      // Categorize rows
-      let validCount = 0;
-      let invalidCount = 0;
-      let duplicateCount = 0;
+      // Check for duplicate in database
+      const duplicate = db.prepare(`
+        SELECT patient_id, created_at FROM patient_registry
+        WHERE full_name = ? AND date_of_birth = ?
+      `).get(vRow.data.full_name.trim(), vRow.data.date_of_birth || null);
       
-      const processedRows = validatedRows.map(vRow => {
-        if (!vRow.isValid) {
-          invalidCount++;
-          return { ...vRow, status: 'INVALID' };
-        }
-        
-        // Check for duplicate in database
-        const duplicate = db.prepare(`
-          SELECT patient_id, created_at FROM patient_registry
-          WHERE full_name = ? AND date_of_birth = ?
-        `).get(vRow.data.full_name.trim(), vRow.data.date_of_birth || null);
-        
-        if (duplicate) {
+      if (duplicate) {
+        duplicateCount++;
+        return { ...vRow, status: 'DUPLICATE', existing_patient_id: duplicate.patient_id };
+      }
+      
+      validCount++;
+      return { ...vRow, status: 'VALID' };
+    });
+    
+    // Check for duplicates within the file itself
+    const nameDobCombos = new Set();
+    const internalDuplicates = [];
+    
+    processedRows.forEach(pRow => {
+      if (pRow.status === 'VALID') {
+        const combo = `${pRow.data.full_name}|${pRow.data.date_of_birth || ''}`;
+        if (nameDobCombos.has(combo)) {
+          internalDuplicates.push(pRow.rowIndex);
+          pRow.status = 'DUPLICATE';
+          pRow.duplicate_within_file = true;
+          validCount--;
           duplicateCount++;
-          return { ...vRow, status: 'DUPLICATE', existing_patient_id: duplicate.patient_id };
+        } else {
+          nameDobCombos.add(combo);
         }
-        
-        validCount++;
-        return { ...vRow, status: 'VALID' };
-      });
-      
-      // Check for duplicates within the file itself
-      const nameDobCombos = new Set();
-      const internalDuplicates = [];
-      
-      processedRows.forEach(pRow => {
-        if (pRow.status === 'VALID') {
-          const combo = `${pRow.data.full_name}|${pRow.data.date_of_birth || ''}`;
-          if (nameDobCombos.has(combo)) {
-            internalDuplicates.push(pRow.rowIndex);
-            pRow.status = 'DUPLICATE';
-            pRow.duplicate_within_file = true;
-            validCount--;
-            duplicateCount++;
-          } else {
-            nameDobCombos.add(combo);
-          }
-        }
-      });
+      }
+    });
 
-      // Generate preview ID
-      const previewId = randomUUID();
-      
-      // Store preview in database
-      const previewData = JSON.stringify(processedRows);
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-      
-      db.prepare(`
-        INSERT INTO import_previews (
-          preview_id, session_id, user_email, file_name, file_format,
-          total_rows, valid_rows, invalid_rows, duplicate_rows, preview_data, expires_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        previewId,
-        session.sessionId,
-        session.email,
-        fileName,
-        fileFormat,
-        rows.length,
-        validCount,
-        invalidCount,
-        duplicateCount,
-        previewData,
-        Math.floor(expiresAt.getTime() / 1000)
-      );
+    // Generate preview ID
+    const previewId = randomUUID();
+    
+    // Store preview in database
+    const previewData = JSON.stringify(processedRows);
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    
+    db.prepare(`
+      INSERT INTO import_previews (
+        preview_id, session_id, user_email, file_name, file_format,
+        total_rows, valid_rows, invalid_rows, duplicate_rows, preview_data, expires_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      previewId,
+      session.sessionId,
+      session.email,
+      fileName,
+      fileFormat,
+      rows.length,
+      validCount,
+      invalidCount,
+      duplicateCount,
+      previewData,
+      Math.floor(expiresAt.getTime() / 1000)
+    );
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          preview_id: previewId,
-          file_name: fileName,
-          file_format: fileFormat,
-          total_rows: rows.length,
-          valid_rows: validCount,
-          invalid_rows: invalidCount,
-          duplicate_rows: duplicateCount,
-          expires_at: expiresAt.toISOString(),
-          rows: processedRows.slice(0, 50) // Return first 50 rows for preview
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      );
-
-    } finally {
-      db.close();
-    }
+    return new Response(
+      JSON.stringify({
+        success: true,
+        preview_id: previewId,
+        file_name: fileName,
+        file_format: fileFormat,
+        total_rows: rows.length,
+        valid_rows: validCount,
+        invalid_rows: invalidCount,
+        duplicate_rows: duplicateCount,
+        expires_at: expiresAt.toISOString(),
+        rows: processedRows.slice(0, 50) // Return first 50 rows for preview
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('[IMPORT_PREVIEW] Error:', error);

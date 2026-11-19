@@ -46,7 +46,7 @@ async function patientExists(patientId, runQuery, isMimic) {
 
 export async function POST(request, { params }) {
   try {
-    const { runQuery, runWriteQuery, verifyAuth } = await import('../../../../../../backend/database/connection.js');
+    const { runQuery, runWriteQuery, verifyAuth } = await import('@/backend/database/connection.js');
     
     const session = verifyAuth(request);
     if (!session) {

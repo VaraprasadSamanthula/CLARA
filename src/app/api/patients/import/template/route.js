@@ -40,6 +40,8 @@ export async function GET(request) {
     } else if (format === 'xlsx') {
       // XLSX format using xlsx library
       try {
+        const { createRequire } = await import('module');
+        const require = createRequire(import.meta.url);
         const XLSX = require('xlsx');
 
         // Create workbook with one sheet

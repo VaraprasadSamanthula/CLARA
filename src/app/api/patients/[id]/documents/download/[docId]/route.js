@@ -9,6 +9,7 @@
 
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+import { runQuery, verifyAuth, initializeDb, getDb } from '@/backend/database/connection.js';
 
 const UPLOAD_DIR = join(process.cwd(), 'private', 'documents');
 
@@ -23,8 +24,6 @@ function isPatientMimic(patientId) {
 
 export async function GET(request, { params }) {
   try {
-    const { runQuery, verifyAuth } = await import('../../../../../../../backend/database/connection.js');
-    
     // Verify authentication
     const session = verifyAuth(request);
     if (!session) {

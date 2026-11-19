@@ -7,17 +7,8 @@
  * Rolls back on error.
  */
 
-import { verifyAuth, initializeDb } from '@/backend/database/connection.js';
-import { createRequire } from 'module';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { verifyAuth, initializeDb, getDb } from '@/backend/database/connection.js';
 import { randomUUID } from 'crypto';
-
-const require = createRequire(import.meta.url);
-const Database = require('better-sqlite3');
-const __filename = fileURLToPath(import.meta.url);
-const projectRoot = path.join(__filename, '../../../../../../');
-const dbPath = path.join(projectRoot, 'database', 'clara.db');
 
 export async function POST(request) {
   try {
@@ -59,196 +50,196 @@ export async function POST(request) {
       );
     }
 
-    // Connect to database
-    const db = new Database(dbPath);
-    db.pragma('foreign_keys = ON');
+    // Get database connection from shared pool
+    const db = getDb();
+    if (!db) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Database not available' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Retrieve preview
+    const preview = db.prepare(`
+      SELECT * FROM import_previews WHERE preview_id = ?
+    `).get(preview_id);
+
+    if (!preview) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Preview not found' }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify ownership
+    if (preview.session_id !== session.sessionId) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Preview does not belong to current session' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check expiration
+    const now = Math.floor(Date.now() / 1000);
+    if (preview.expires_at < now) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Preview has expired' }),
+        { status: 410, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Parse preview data
+    let rows;
+    try {
+      rows = JSON.parse(preview.preview_data);
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid preview data' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Filter rows for insertion
+    const rowsToInsert = skip_duplicates 
+      ? rows.filter(r => r.status === 'VALID')
+      : rows.filter(r => r.status === 'VALID' || (r.status === 'DUPLICATE' && r.duplicate_within_file));
+
+    if (rowsToInsert.length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'No valid rows to import after filtering'
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Execute import in a transaction
+    const importId = randomUUID();
+    let insertedCount = 0;
+    let duplicateSkipped = 0;
+    let invalidSkipped = 0;
+    let errorMessage = null;
 
     try {
-      // Retrieve preview
-      const preview = db.prepare(`
-        SELECT * FROM import_previews WHERE preview_id = ?
-      `).get(preview_id);
+      // Start transaction
+      const transaction = db.transaction(() => {
+        for (const row of rowsToInsert) {
+          // Recheck for duplicate in case database changed since preview
+          const duplicate = db.prepare(`
+            SELECT patient_id FROM patient_registry
+            WHERE full_name = ? AND date_of_birth = ?
+          `).get(row.data.full_name.trim(), row.data.date_of_birth || null);
 
-      if (!preview) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Preview not found' }),
-          { status: 404, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Verify ownership
-      if (preview.session_id !== session.sessionId) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Preview does not belong to current session' }),
-          { status: 403, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Check expiration
-      const now = Math.floor(Date.now() / 1000);
-      if (preview.expires_at < now) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Preview has expired' }),
-          { status: 410, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Parse preview data
-      let rows;
-      try {
-        rows = JSON.parse(preview.preview_data);
-      } catch (e) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Invalid preview data' }),
-          { status: 500, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Filter rows for insertion
-      const rowsToInsert = skip_duplicates 
-        ? rows.filter(r => r.status === 'VALID')
-        : rows.filter(r => r.status === 'VALID' || (r.status === 'DUPLICATE' && r.duplicate_within_file));
-
-      if (rowsToInsert.length === 0) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'No valid rows to import after filtering'
-          }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Execute import in a transaction
-      const importId = randomUUID();
-      let insertedCount = 0;
-      let duplicateSkipped = 0;
-      let invalidSkipped = 0;
-      let errorMessage = null;
-
-      try {
-        // Start transaction
-        const transaction = db.transaction(() => {
-          for (const row of rowsToInsert) {
-            // Recheck for duplicate in case database changed since preview
-            const duplicate = db.prepare(`
-              SELECT patient_id FROM patient_registry
-              WHERE full_name = ? AND date_of_birth = ?
-            `).get(row.data.full_name.trim(), row.data.date_of_birth || null);
-
-            if (duplicate) {
-              duplicateSkipped++;
-              continue;
-            }
-
-            // Insert patient
-            try {
-              db.prepare(`
-                INSERT INTO patient_registry (
-                  patient_source, full_name, date_of_birth, gender, phone, email, address, created_by
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-              `).run(
-                'IMPORT',
-                row.data.full_name.trim(),
-                row.data.date_of_birth || null,
-                row.data.gender || null,
-                row.data.phone || null,
-                row.data.email || null,
-                row.data.address || null,
-                session.email
-              );
-
-              insertedCount++;
-            } catch (e) {
-              if (e.message.includes('UNIQUE constraint')) {
-                duplicateSkipped++;
-              } else {
-                throw e;
-              }
-            }
+          if (duplicate) {
+            duplicateSkipped++;
+            continue;
           }
 
-          // Invalid rows
-          invalidSkipped = rows.filter(r => r.status === 'INVALID').length;
+          // Insert patient
+          try {
+            db.prepare(`
+              INSERT INTO patient_registry (
+                patient_source, full_name, date_of_birth, gender, phone, email, address, created_by
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(
+              'IMPORT',
+              row.data.full_name.trim(),
+              row.data.date_of_birth || null,
+              row.data.gender || null,
+              row.data.phone || null,
+              row.data.email || null,
+              row.data.address || null,
+              session.email
+            );
 
-          // Log the import
-          db.prepare(`
-            INSERT INTO import_logs (
-              import_id, session_id, user_email, file_name,
-              total_inserted, duplicate_skipped, invalid_skipped, import_status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-          `).run(
-            importId,
-            session.sessionId,
-            session.email,
-            preview.file_name,
-            insertedCount,
-            duplicateSkipped,
-            invalidSkipped,
-            insertedCount > 0 ? 'success' : 'partial'
-          );
-        });
-
-        transaction();
-
-      } catch (error) {
-        // Transaction will automatically rollback
-        errorMessage = error.message;
-        console.error('[IMPORT_CONFIRM] Transaction error:', error);
-
-        // Log failed import
-        try {
-          db.prepare(`
-            INSERT INTO import_logs (
-              import_id, session_id, user_email, file_name,
-              total_inserted, duplicate_skipped, invalid_skipped, import_status, error_message
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `).run(
-            importId,
-            session.sessionId,
-            session.email,
-            preview.file_name,
-            insertedCount,
-            duplicateSkipped,
-            invalidSkipped,
-            'failed',
-            errorMessage
-          );
-        } catch (logError) {
-          console.error('[IMPORT_CONFIRM] Failed to log error:', logError);
+            insertedCount++;
+          } catch (e) {
+            if (e.message.includes('UNIQUE constraint')) {
+              duplicateSkipped++;
+            } else {
+              throw e;
+            }
+          }
         }
 
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: `Import transaction failed: ${errorMessage}`,
-            inserted: insertedCount
-          }),
-          { status: 500, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
+        // Invalid rows
+        invalidSkipped = rows.filter(r => r.status === 'INVALID').length;
 
-      // Mark preview as confirmed
-      db.prepare('UPDATE import_previews SET confirmed = 1 WHERE preview_id = ?').run(preview_id);
+        // Log the import
+        db.prepare(`
+          INSERT INTO import_logs (
+            import_id, session_id, user_email, file_name,
+            total_inserted, duplicate_skipped, invalid_skipped, import_status
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          importId,
+          session.sessionId,
+          session.email,
+          preview.file_name,
+          insertedCount,
+          duplicateSkipped,
+          invalidSkipped,
+          insertedCount > 0 ? 'success' : 'partial'
+        );
+      });
+
+      transaction();
+
+    } catch (error) {
+      // Transaction will automatically rollback
+      errorMessage = error.message;
+      console.error('[IMPORT_CONFIRM] Transaction error:', error);
+
+      // Log failed import
+      try {
+        db.prepare(`
+          INSERT INTO import_logs (
+            import_id, session_id, user_email, file_name,
+            total_inserted, duplicate_skipped, invalid_skipped, import_status, error_message
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          importId,
+          session.sessionId,
+          session.email,
+          preview.file_name,
+          insertedCount,
+          duplicateSkipped,
+          invalidSkipped,
+          'failed',
+          errorMessage
+        );
+      } catch (logError) {
+        console.error('[IMPORT_CONFIRM] Failed to log error:', logError);
+      }
 
       return new Response(
         JSON.stringify({
-          success: true,
-          import_id: importId,
-          message: `Import completed successfully`,
-          summary: {
-            total_requested: rowsToInsert.length,
-            inserted: insertedCount,
-            duplicate_skipped: duplicateSkipped,
-            invalid_skipped: invalidSkipped
-          }
+          success: false,
+          error: `Import transaction failed: ${errorMessage}`,
+          inserted: insertedCount
         }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
-
-    } finally {
-      db.close();
     }
+
+    // Mark preview as confirmed
+    db.prepare('UPDATE import_previews SET confirmed = 1 WHERE preview_id = ?').run(preview_id);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        import_id: importId,
+        message: `Import completed successfully`,
+        summary: {
+          total_requested: rowsToInsert.length,
+          inserted: insertedCount,
+          duplicate_skipped: duplicateSkipped,
+          invalid_skipped: invalidSkipped
+        }
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('[IMPORT_CONFIRM] Error:', error);

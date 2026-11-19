@@ -5,16 +5,7 @@
  * Only accessible by the user who created the preview (session check).
  */
 
-import { verifyAuth, initializeDb } from '@/backend/database/connection.js';
-import { createRequire } from 'module';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const require = createRequire(import.meta.url);
-const Database = require('better-sqlite3');
-const __filename = fileURLToPath(import.meta.url);
-const projectRoot = path.join(__filename, '../../../../../../');
-const dbPath = path.join(projectRoot, 'database', 'clara.db');
+import { verifyAuth, initializeDb, getDb } from '@/backend/database/connection.js';
 
 function generateErrorReportCSV(previewData, preview) {
   // Parse the preview data (array of row objects)
@@ -98,6 +89,15 @@ export async function GET(request) {
       );
     }
 
+    // Get database connection
+    const db = getDb();
+    if (!db) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Database not available' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Get preview_id from query params
     const { searchParams } = new URL(request.url);
     const previewId = searchParams.get('preview_id');
@@ -109,63 +109,54 @@ export async function GET(request) {
       );
     }
 
-    // Connect to database
-    const db = new Database(dbPath);
-    db.pragma('foreign_keys = ON');
+    // Get preview from database
+    const preview = db.prepare(`
+      SELECT preview_id, preview_data, file_name, user_email, session_id,
+             total_rows, valid_rows, invalid_rows, duplicate_rows, file_format
+      FROM import_previews
+      WHERE preview_id = ?
+    `).get(previewId);
 
-    try {
-      // Get preview from database
-      const preview = db.prepare(`
-        SELECT preview_id, preview_data, file_name, user_email, session_id,
-               total_rows, valid_rows, invalid_rows, duplicate_rows, file_format
-        FROM import_previews
-        WHERE preview_id = ?
-      `).get(previewId);
-
-      if (!preview) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Preview not found' }),
-          { status: 404, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Verify ownership: user can only access their own preview
-      if (preview.user_email !== session.email) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Not authorized to access this preview' }),
-          { status: 403, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Check if there are any errors
-      if (preview.invalid_rows === 0 && preview.duplicate_rows === 0) {
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'No errors in this preview - all rows are valid',
-            message: 'There are no invalid or duplicate rows to report'
-          }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Generate CSV error report
-      const csv = generateErrorReportCSV(preview.preview_data, preview);
-
-      // Return CSV file
-      const filename = `CLARA_Import_Errors_${previewId.substring(0, 8)}.csv`;
-      return new Response(csv, {
-        status: 200,
-        headers: {
-          'Content-Type': 'text/csv; charset=utf-8',
-          'Content-Disposition': `attachment; filename="${filename}"`,
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
-        }
-      });
-
-    } finally {
-      db.close();
+    if (!preview) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Preview not found' }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
     }
+
+    // Verify ownership: user can only access their own preview
+    if (preview.user_email !== session.email) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Not authorized to access this preview' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if there are any errors
+    if (preview.invalid_rows === 0 && preview.duplicate_rows === 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'No errors in this preview - all rows are valid',
+          message: 'There are no invalid or duplicate rows to report'
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Generate CSV error report
+    const csv = generateErrorReportCSV(preview.preview_data, preview);
+
+    // Return CSV file
+    const filename = `CLARA_Import_Errors_${previewId.substring(0, 8)}.csv`;
+    return new Response(csv, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
+      }
+    });
 
   } catch (error) {
     console.error('[IMPORT_ERRORS] Error:', error);
